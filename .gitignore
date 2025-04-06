@@ -1,0 +1,9 @@
+/public/
+/resources/_gen/
+/assets/jsconfig.json
+.hugo_build.lock
+
+# Latex files
+./static/files/resume/resume*.aux
+./static/files/resume/resume*.bcf
+./static/files/resume/resume*.log
