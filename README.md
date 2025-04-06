@@ -43,4 +43,4 @@ After cloning this repository, you can adapt it by:
 
 In Settings, Pages, select:
 - Deploy from a branch as Source
-- gh-pages, `/(root)` as Branch
+- Use gh-pages, `/(root)` as Branch
