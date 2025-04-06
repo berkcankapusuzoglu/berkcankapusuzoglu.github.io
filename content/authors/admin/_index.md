@@ -33,9 +33,9 @@ interests:
 # Education to show in About widget
 education:
   courses:
-    - course: PhD in Nanofluidics
-      institution: University of Lyon (France)
-      year: 2015
+    - course: PhD in Civil Engineering
+      institution: Vanderbilt University (USA)
+      year: 2022
 
 # Social/Academic Networking
 # For available icons, see: https://wowchemy.com/docs/getting-started/page-builder/#icons
@@ -77,7 +77,7 @@ In summary, my work and research are at the intersection of machine learning, co
 
 <span style="display: block; height: 8px;"></span>
 
-### What I share on <a href="https://github.com/kapusuzoglu" target="_blank" style="text-decoration: none;">GitHub</a> ##
+### What I share on <a href="https://github.com/berkcankapusuzoglu" target="_blank" style="text-decoration: none;">GitHub</a> ##
 
   - Input files for molecular simulations
   - Scripts for preparing and analyzing simulations
