@@ -1,10 +1,10 @@
 ---
 # Display name
-title: Simon Gravelle
+title: Berkcan Kapusuzoglu
 
 # Full name (for SEO)
-first_name: Simon
-last_name: Gravelle
+first_name: Berkcan
+last_name: Kapusuzoglu
 
 # Status emoji
 status:
@@ -14,12 +14,12 @@ status:
 superuser: true
 
 # Role/position/tagline
-role: CNRS research scientist
+role: Principal Data Scientist
 
 # Organizations/Affiliations to show in About widget
 organizations:
-  - name: LIPhy, Grenoble, France
-    url: https://liphy.univ-grenoble-alpes.fr/
+  - name: Capital One, McLean, USA
+    url: https://www.capitalone.com/
 
 # Short bio (displayed in user profile at end of posts)
 bio: Computer physicist in soft matter and fluids at interfaces in LIPhy (UGA, CNRS), in Grenoble, France.
@@ -45,37 +45,39 @@ education:
 social:
   - icon: envelope
     icon_pack: fas
-    link: mailto:simon.gravelle@live.fr
+    link: mailto:berkcankapusuzoglu@gmail.com
   - icon: github
     icon_pack: fab
-    link: https://github.com/simongravelle
+    link: https://github.com/berkcankapusuzoglu
     display:
       header: true
-  - icon: mastodon
-    icon_pack: fab
-    link: https://mastodon.social/@simongravelle
-    label: Follow me on Mastodon
   - icon: graduation-cap
     icon_pack: fas
-    link: https://scholar.google.com/citations?user=9fD2JlYAAAAJ&hl
+    link: https://scholar.google.com/citations?user=iv1vNTYAAAAJ&hl=en&oi=ao
   - icon: cv
     icon_pack: ai
-    link: files/resume/resume-simon-gravelle.pdf
+    link: files/resume/Berkcan_Resume.pdf
 
 highlight_name: true # Highlight the author in author lists? (true/false)
 ---
 
 ### About me ##
 
-I am a computer physicist in soft matter and fluids at interfaces, working at the LIPhy laboratory in Grenoble, France.
+As a Data Scientist at Capital One’s Artificial Intelligence Foundations team, I specialize in Natural Language Processing (NLP), Generative AI, and Large Language Models (LLMs). My work spans across various facets of distributed machine learning, including training and inference optimization, generative NLP, and tackling large-scale data science and engineering challenges.
 
-<a href="https://github.com/simongravelle" target="_blank" style="float: right">
+In addition to my work at Capital One, I have a strong academic background. I earned my Ph.D. from Vanderbilt University and hold two M.S. degrees in Computational Engineering and Applied Mathematics from Delft University and the University of Erlangen-Nuremberg, respectively.
+
+My research interests include the development of hybrid machine learning methods that integrate physics knowledge seamlessly. I have a particular focus on modeling uncertainty and developing multi-objective optimizations in response to uncertainty. This work involves Physics-Informed Machine Learning (PIML) for Uncertainty Quantification (UQ) and optimization. Currently, I take great pleasure in building GenAI models for Capital One using cutting-edge architectures and techniques. 
+
+In summary, my work and research are at the intersection of machine learning, computational engineering, and optimization under uncertainty, with a strong emphasis on practical applications and theoretical foundations.
+
+<a href="https://github.com/berkcankapusuzoglu" target="_blank" style="float: right">
   <img src="https://raw.githubusercontent.com/simongravelle/simongravelle.github.io/refs/heads/main/static/img/water-in-polymer.png" alt="Water in polymer - molecular dynamics" width="200">
 </a>
 
 <span style="display: block; height: 8px;"></span>
 
-### What I share on <a href="https://github.com/simongravelle" target="_blank" style="text-decoration: none;">GitHub</a> ##
+### What I share on <a href="https://github.com/kapusuzoglu" target="_blank" style="text-decoration: none;">GitHub</a> ##
 
   - Input files for molecular simulations
   - Scripts for preparing and analyzing simulations
