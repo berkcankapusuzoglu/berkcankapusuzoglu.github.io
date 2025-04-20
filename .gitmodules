@@ -1,3 +1,0 @@
-[submodule ".submodule/scholar-collector"]
-	path = .submodule/scholar-collector
-	url = git@github.com:berkcankapusuzoglu/scholar-collector.git
