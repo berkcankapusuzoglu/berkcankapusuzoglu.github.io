@@ -51,13 +51,28 @@ social:
     icon_pack: fab
     link: https://github.com/berkcankapusuzoglu
     display:
-      header: true
+      header: false
+  - icon: linkedin
+    icon_pack: fab
+    link: https://www.linkedin.com/in/berkcankapusuzoglu/
   - icon: graduation-cap
     icon_pack: fas
     link: https://scholar.google.com/citations?user=iv1vNTYAAAAJ&hl=en&oi=ao
   - icon: cv
     icon_pack: ai
     link: files/resume/Berkcan_Resume.pdf
+  # - icon: researchgate
+  #   icon_pack: fab
+  #   link: https://www.researchgate.net/profile/Berkcan-Kapusuzoglu-3
+  #   display:
+  #     header: true
+  #     footer: false
+  # - icon: twitter
+  #   icon_pack: fab
+  #   link: https://twitter.com/Berkcan_K
+  #   display:
+  #     header: true
+  #     footer: false
 
 highlight_name: true # Highlight the author in author lists? (true/false)
 ---
