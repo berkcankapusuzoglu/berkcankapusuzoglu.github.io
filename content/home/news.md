@@ -15,8 +15,8 @@ content:
       tag: Job
     - name: Personal
       tag: Personal
-    - name: Outreach
-      tag: Outreach
+    # - name: Outreach
+    #   tag: Outreach
 design:
   columns: '2'
   # Toggle between the various page layout types.

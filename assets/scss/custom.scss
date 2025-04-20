@@ -101,9 +101,23 @@
 
 }
 
+body {
+  font-size: 18px; /* Adjust this value as needed */
+}
+
+.home-section {
+  padding-top: 10px; /* Adjust this value as needed */
+  padding-bottom: 10px; /* Adjust this value as needed */
+}
+
+header {
+  margin-bottom: 50px; /* Adjust this value as needed */
+}
+
+
 h2, h3 {
-  margin-top: 1em;
-  margin-bottom: .4em;
+  margin-top: .5em;
+  margin-bottom: .5em;
 }
 
 .btn-copy-code {
