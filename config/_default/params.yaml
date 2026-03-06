@@ -50,7 +50,7 @@ footer:
 # Localization
 
 locale:
-  date_format: 'Jan 2, 2002'
+  date_format: 'Jan 2, 2006'
   time_format: '2:02 PM'
   address_format: en-us
 
@@ -78,7 +78,7 @@ features:
     gravatar: false
     shape: circle
   comment:
-    provider: 'giscus'
+    provider: ''
     giscus:
       repo: ''
       repo_id: ''

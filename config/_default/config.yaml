@@ -6,6 +6,8 @@ theme: "starter-hugo-academic"
 
 title: Berkcan Kapusuzoglu # Website name
 baseURL: 'https://berkcankapusuzoglu.github.io/' # Website URL
+relativeURLs: true
+uglyURLs: true
 
 ############################
 ## LANGUAGE

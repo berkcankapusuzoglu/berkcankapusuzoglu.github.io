@@ -1,12 +1,2 @@
-# The base URL for your website. 
-# This is typically the domain where your site will be hosted. 
-# Use "/" if hosting locally or configuring later for deployment.
-baseurl = "https://berkcankapusuzoglu.github.io/"
-
-# Enable relative URLs to avoid absolute paths in links. 
-# This is useful for testing locally or deploying to non-root domains.
-relativeURLs = true
-
-# Use "ugly" URLs for pages (e.g., "/about.html" instead of "/about/").
-# This can be useful for certain server setups or preferences.
-uglyURLs = true
+# Configuration is managed in config/_default/
+# See config/_default/config.yaml for all settings

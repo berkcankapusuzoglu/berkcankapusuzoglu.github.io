@@ -6,4 +6,4 @@ summary: "Celebrating a patent submission regarding sparse continual pre-trainin
 draft: false
 ---
 
-I am excited to share that I have achieved a major personal milestone!
+I am excited to share that I have submitted a patent regarding sparse continual pre-training of LLMs!
