@@ -2,38 +2,62 @@ name: Deploy GitHub Pages
 
 on:
   push:
-    branches:
-      - master  # Set a branch name to trigger deployment
+    branches: [master]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true  # Fetch any Git submodules (true OR recursive)
-          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
-
+          submodules: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: 0.140.2
+          hugo-version: '0.145.0'
           extended: true
-
+      - name: Unit tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
       - name: Build
-        run: hugo --minify
+        run: hugo --minify --panicOnWarning --printPathWarnings
+      - name: Validate routes and HTML
+        # Task 2 removes the exact legacy-theme structural exceptions.
+        run: python scripts/site_check.py --public public --expected tests/expected-urls.txt --allowlist tests/legacy-html-allowlist.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-public
+          path: public/
+          if-no-files-found: error
+          include-hidden-files: true
 
-      - name: Deploy
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-public
+          path: public/
+      - name: Deploy existing Pages branch
         uses: peaceiris/actions-gh-pages@v4
-        # If you're changing the branch from master, 
-        # also change the `master` in `refs/heads/master` 
-        # below accordingly.
-        if: ${{ github.ref == 'refs/heads/master' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+          publish_branch: gh-pages
+          publish_dir: public/

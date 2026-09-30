@@ -1,2 +1,7 @@
 # Configuration is managed in config/_default/
 # See config/_default/config.yaml for all settings
+
+[module.hugoVersion]
+  extended = true
+  min = "0.145.0"
+  max = "0.145.0"
