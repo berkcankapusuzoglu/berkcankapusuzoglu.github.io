@@ -25,12 +25,18 @@ class _Document(HTMLParser):
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.root = {'tag': '', 'attrs': {}, 'children': []}
+        self.root = {'tag': '', 'attrs': {}, 'children': [], 'hidden': False,
+                     'in_template': False}
         self.stack = [self.root]
         self.nodes = []
 
     def handle_starttag(self, tag, attrs):
-        node = {'tag': tag, 'attrs': dict(attrs), 'children': []}
+        attributes = dict(attrs)
+        parent = self.stack[-1]
+        node = {'tag': tag, 'attrs': attributes, 'children': [],
+                'hidden': parent['hidden'] or 'hidden' in attributes or
+                          attributes.get('aria-hidden', '').lower() == 'true',
+                'in_template': parent['in_template'] or tag == 'template'}
         self.stack[-1]['children'].append(node)
         self.nodes.append(node)
         if tag not in self.VOID:
@@ -51,9 +57,9 @@ class _Document(HTMLParser):
         self.stack[-1]['children'].append(data)
 
 
-def _accessible_text(node):
+def _accessible_text(node, include_hidden=False):
     attrs = node['attrs']
-    if attrs.get('aria-hidden', '').lower() == 'true' or 'hidden' in attrs:
+    if node['in_template'] or (node['hidden'] and not include_hidden):
         return ''
     if node['tag'] in {'script', 'style', 'template'}:
         return ''
@@ -61,20 +67,35 @@ def _accessible_text(node):
         return attrs['aria-label']
     if node['tag'] == 'img':
         return attrs.get('alt') or ''
-    return ' '.join(child if isinstance(child, str) else _accessible_text(child)
+    return ' '.join(child if isinstance(child, str) else _accessible_text(child, include_hidden)
                     for child in node['children'])
+
+
+def _accessible_name(node, ids):
+    references = [ids[label] for label in node['attrs'].get('aria-labelledby', '').split()
+                  if label in ids]
+    if references:
+        return ' '.join(_accessible_text(label, include_hidden=label['hidden'])
+                        for label in references)
+    return _accessible_text(node)
 
 
 def validate_html_document(path: Path) -> list[str]:
     document = _Document()
     document.feed(path.read_text(encoding='utf-8'))
     errors = []
-    h1_count = sum(node['tag'] == 'h1' for node in document.nodes)
+    visible = [node for node in document.nodes if not node['hidden'] and not node['in_template']]
+    headings = [node for node in visible if node['tag'] == 'h1']
+    h1_count = len(headings)
     if h1_count != 1:
         errors.append(f'Expected exactly one H1; found {h1_count}')
-    if not any(node['tag'] == 'main' for node in document.nodes):
+    if not any(node['tag'] == 'main' for node in visible):
         errors.append('Missing main landmark')
-    ids = {node['attrs']['id']: node for node in document.nodes if node['attrs'].get('id')}
+    ids = {node['attrs']['id']: node for node in document.nodes
+           if node['attrs'].get('id') and not node['in_template']}
+    for heading in headings:
+        if not _accessible_name(heading, ids).strip():
+            errors.append('H1 missing accessible text')
     for node in document.nodes:
         attrs = node['attrs']
         if node['tag'] == 'img':
@@ -83,10 +104,7 @@ def validate_html_document(path: Path) -> list[str]:
             if not decorative and not (alt or '').strip():
                 errors.append(f"Image missing useful alt text: {attrs.get('src', '(no src)')}")
         if node['tag'] == 'a' and 'href' in attrs:
-            name = _accessible_text(node)
-            if attrs.get('aria-labelledby'):
-                name = ' '.join(_accessible_text(ids[label]) for label in
-                                attrs['aria-labelledby'].split() if label in ids)
+            name = _accessible_name(node, ids)
             if not name.strip():
                 errors.append(f"Link missing accessible text: {attrs['href']}")
     return errors

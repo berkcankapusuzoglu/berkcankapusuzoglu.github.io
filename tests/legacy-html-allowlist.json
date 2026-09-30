@@ -1,4 +1,11 @@
 [
+  "/gallery/methods.html: H1 missing accessible text",
+  "/gallery/systems.html: H1 missing accessible text",
+  "/: Link missing accessible text: mailto:berkcankapusuzoglu@gmail.com",
+  "/: Link missing accessible text: https://github.com/berkcankapusuzoglu",
+  "/: Link missing accessible text: https://www.linkedin.com/in/berkcankapusuzoglu/",
+  "/: Link missing accessible text: https://scholar.google.com/citations?user=iv1vNTYAAAAJ&hl=en&oi=ao",
+  "/: Link missing accessible text: ./files/resume/Berkcan_Resume.pdf",
   "/404.html: Expected exactly one H1; found 2",
   "/404.html: Missing main landmark",
   "/admin.html: Expected exactly one H1; found 0",

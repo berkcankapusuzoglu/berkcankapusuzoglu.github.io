@@ -48,6 +48,29 @@ class SiteCheckTests(unittest.TestCase):
     def test_missing_main_is_reported(self):
         self.assertIn('Missing main landmark', self.document('<h1>A</h1>'))
 
+    def test_template_content_cannot_supply_structural_landmarks(self):
+        errors = self.document('<template><main><h1>A</h1></main></template>')
+        self.assertIn('Expected exactly one H1; found 0', errors)
+        self.assertIn('Missing main landmark', errors)
+
+    def test_hidden_subtrees_cannot_supply_structural_landmarks(self):
+        for marker in ('hidden', 'aria-hidden="true"'):
+            with self.subTest(marker=marker):
+                errors = self.document(f'<section {marker}><main><h1>A</h1></main></section>')
+                self.assertIn('Expected exactly one H1; found 0', errors)
+                self.assertIn('Missing main landmark', errors)
+
+    def test_hidden_headings_do_not_create_a_duplicate_h1(self):
+        self.assertEqual(self.document('<main><h1>A</h1><section hidden><h1>B</h1>'
+                                       '</section><template><h1>C</h1></template></main>'), [])
+
+    def test_heading_requires_meaningful_accessible_text(self):
+        for content in (' ', '<span hidden>Hidden heading</span>',
+                        '<span aria-hidden="true">Hidden heading</span>'):
+            with self.subTest(content=content):
+                self.assertIn('H1 missing accessible text',
+                              self.document(f'<main><h1>{content}</h1></main>'))
+
     def test_image_without_alt_is_reported(self):
         self.assertIn('Image missing useful alt text: photo.png',
                       self.document('<main><h1>A</h1><img src="photo.png"></main>'))
@@ -79,6 +102,26 @@ class SiteCheckTests(unittest.TestCase):
             '<a href="/c"><img src="photo.png" alt="Portrait"></a>'
             '<a href="/d" aria-labelledby="link-label"><i></i></a>'
             '<span id="link-label">Contact</span></main>'), [])
+
+    def test_explicitly_referenced_hidden_text_can_name_a_link(self):
+        self.assertEqual(self.document('<main><h1>A</h1>'
+            '<a href="/paper" aria-labelledby="label"><i></i></a>'
+            '<span id="label" hidden>Read paper</span></main>'), [])
+
+    def test_label_inside_hidden_ancestor_can_name_a_link(self):
+        self.assertEqual(self.document('<main><h1>A</h1>'
+            '<a href="/paper" aria-labelledby="label"><i></i></a>'
+            '<div hidden><span id="label">Read paper</span></div></main>'), [])
+
+    def test_invalid_label_reference_falls_back_to_aria_label(self):
+        self.assertEqual(self.document('<main><h1>A</h1>'
+            '<a href="/paper" aria-labelledby="missing" aria-label="Read paper">'
+            '<i></i></a></main>'), [])
+
+    def test_hidden_descendant_of_visible_label_does_not_supply_text(self):
+        self.assertIn('Link missing accessible text: /paper', self.document(
+            '<main><h1>A</h1><a href="/paper" aria-labelledby="label"><i></i></a>'
+            '<span id="label"><span hidden>Read paper</span></span></main>'))
 
     def test_cli_reports_errors_and_fails(self):
         (self.root / 'index.html').write_text('<h1>A</h1>', encoding='utf-8')
