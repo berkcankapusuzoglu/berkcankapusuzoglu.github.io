@@ -43,9 +43,9 @@ h2, h3 { line-height: 1.2; }
 @media (max-width: 42rem) {
   .site-header { align-items: flex-start; flex-wrap: wrap; padding: 1rem 1.25rem; }
   .primary-nav { width: 100%; align-items: flex-start; flex-direction: column; }
-  .nav-toggle { display: inline-flex; }
-  .nav-menu { display: none; width: 100%; align-items: flex-start; flex-direction: column; gap: .5rem; padding: .75rem 0; }
-  .nav-menu.is-open { display: flex; }
+  .js .nav-toggle { display: inline-flex; }
+  .js .nav-menu { display: none; width: 100%; align-items: flex-start; flex-direction: column; gap: .5rem; padding: .75rem 0; }
+  .js .nav-menu.is-open { display: flex; }
   .site-main { width: min(100% - 2rem, 72rem); padding: 3rem 0; }
   .site-footer { flex-direction: column; padding: 1.25rem; }
 }

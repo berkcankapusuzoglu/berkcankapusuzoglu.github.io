@@ -3,6 +3,6 @@
     <p class="eyebrow">404 · Page not found</p>
     <h1>This page is unavailable</h1>
     <p class="lede">The address may have changed. Return to the home page or browse the publications.</p>
-    <p><a href="{{ "/" | relURL }}">Home</a> · <a href="{{ "/publications.html" | relURL }}">Publications</a></p>
+    <p><a href="{{ "/" | absURL }}">Home</a> · <a href="{{ "publications.html" | absURL }}">Publications</a></p>
   </section>
 {{ end }}

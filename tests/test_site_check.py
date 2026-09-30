@@ -125,6 +125,21 @@ class SiteCheckTests(unittest.TestCase):
             '<main><h1>A</h1><a href="/paper" aria-labelledby="label"><i></i></a>'
             '<span id="label"><span hidden>Read paper</span></span></main>'))
 
+    def test_arbitrary_meta_refresh_does_not_bypass_structural_checks(self):
+        errors = self.document('<meta http-equiv="refresh" content="0;url=/">')
+        self.assertIn('Expected exactly one H1; found 0', errors)
+
+    def test_exact_hugo_paginator_redirect_shape_is_accepted(self):
+        route = '/publications/page/1.html'
+        target = 'https://berkcankapusuzoglu.github.io/publications.html'
+        redirect = (self.root / 'publications/page/1.html')
+        redirect.parent.mkdir(parents=True)
+        redirect.write_text(f'''<!doctype html><html lang="en-us"><head><title>{target}</title>
+          <link rel="canonical" href="{target}"><meta name="robots" content="noindex">
+          <meta charset="utf-8"><meta http-equiv="refresh" content="0; url={target}">
+          </head></html>''', encoding='utf-8')
+        self.assertEqual(validate_html_document(redirect, route), [])
+
     def test_cli_reports_errors_and_fails(self):
         (self.root / 'index.html').write_text('<h1>A</h1>', encoding='utf-8')
         expected = self.root / 'urls.txt'
@@ -136,10 +151,10 @@ class SiteCheckTests(unittest.TestCase):
         self.assertIn('Missing route: /old.html', result.stdout)
         self.assertIn('/: Missing main landmark', result.stdout)
 
-    def run_cli(self, body, expected='/'):
+    def run_cli(self, body, expected='/', css=':focus-visible { outline: 3px solid blue; }'):
         (self.root / 'index.html').write_text(body, encoding='utf-8')
         (self.root / 'assets').mkdir(exist_ok=True)
-        (self.root / 'assets/main.css').write_text(':focus-visible { outline: 3px solid blue; }', encoding='utf-8')
+        (self.root / 'assets/main.css').write_text(css, encoding='utf-8')
         urls = self.root / 'urls.txt'
         urls.write_text(expected, encoding='utf-8')
         command = [sys.executable, 'scripts/site_check.py', '--public',
@@ -153,6 +168,17 @@ class SiteCheckTests(unittest.TestCase):
           <link rel="canonical" href="https://example.org/"><meta name="description" content="Page">
           <link rel="stylesheet" href="/assets/main.css">''')
         self.assertEqual(result.returncode, 0)
+
+    def test_cli_rejects_remote_css_resource_syntax(self):
+        shell = '''<a href="#main-content">Skip</a><nav aria-label="Primary"><button data-nav-toggle aria-controls="menu"></button><ul id="menu" data-nav-menu></ul></nav><main id="main-content"><h1>A</h1></main><link rel="canonical" href="https://example.org/"><meta name="description" content="Page"><link rel="stylesheet" href="/assets/main.css">'''
+        for css in (":focus-visible{outline:2px solid blue}a{background:url('https://example.org/font.woff2')}",
+                    ':focus-visible{outline:2px solid blue}a{background:url( https://example.org/font.woff2)}',
+                    ':focus-visible{outline:2px solid blue}a{background:url("http://example.org/font.woff2")}',
+                    ":focus-visible{outline:2px solid blue}@import 'https://example.org/theme.css';"):
+            with self.subTest(css=css):
+                result = self.run_cli(shell, css=css)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn('Remote', result.stdout)
 
 
 class GeneratedShellTests(unittest.TestCase):
@@ -171,7 +197,7 @@ class GeneratedShellTests(unittest.TestCase):
         cls.pages = {}
         for route in ('index.html', 'publications.html',
                       'publications/2024_sarwar_neurips_efficient_natural_language_and_speech_processing_workshop.html',
-                      '404.html'):
+                      '404.html', 'admin.html', 'gallery/methods.html'):
             document = _Document()
             document.feed((cls.public / route).read_text(encoding='utf-8'))
             cls.pages[route] = document
@@ -230,9 +256,13 @@ class GeneratedShellTests(unittest.TestCase):
     def test_linked_local_stylesheet_has_keyboard_visible_focus(self):
         for route, document in self.pages.items():
             with self.subTest(route=route):
+                canonicals = [n for n in document.nodes if n['tag'] == 'link'
+                              and n['attrs'].get('rel') == 'canonical']
+                canonical_host = urlparse(canonicals[0]['attrs']['href']).netloc
                 styles = [n['attrs'].get('href', '') for n in document.nodes if n['tag'] == 'link'
                           and n['attrs'].get('rel') == 'stylesheet']
-                local = [href for href in styles if not urlparse(href).netloc]
+                local = [href for href in styles if not urlparse(href).netloc or
+                         urlparse(href).netloc == canonical_host]
                 self.assertTrue(local, 'Missing local stylesheet')
                 css = ''.join((self.public / urlparse(urljoin('/' + route, href)).path.lstrip('/'))
                               .read_text(encoding='utf-8') for href in local)
@@ -240,13 +270,66 @@ class GeneratedShellTests(unittest.TestCase):
 
     def test_no_remote_runtime_assets_or_wowchemy(self):
         for route, document in self.pages.items():
+            canonicals = [n for n in document.nodes if n['tag'] == 'link'
+                          and n['attrs'].get('rel') == 'canonical']
+            canonical_host = urlparse(canonicals[0]['attrs']['href']).netloc
             for node in document.nodes:
                 if node['tag'] == 'script' or (node['tag'] == 'link' and
                         node['attrs'].get('rel') in {'stylesheet', 'preconnect', 'preload'}):
                     asset = node['attrs'].get('src', node['attrs'].get('href', ''))
                     with self.subTest(route=route, asset=asset):
-                        self.assertFalse(urlparse(asset).netloc, 'Remote runtime asset')
+                        self.assertIn(urlparse(asset).netloc, {'', canonical_host}, 'Remote runtime asset')
                         self.assertNotIn('wowchemy', asset.lower())
+
+    def test_all_legacy_publication_details_retain_front_matter(self):
+        pages = sorted((self.public / 'publications').glob('*.html'))
+        self.assertEqual(len(pages), 14)
+        for path in pages:
+            with self.subTest(page=path.name):
+                document = _Document()
+                document.feed(path.read_text(encoding='utf-8'))
+                self.assertTrue(any('data-publication-abstract' in node['attrs'] and
+                                    _accessible_name(node, {}).strip() for node in document.nodes))
+                self.assertTrue(any('data-publication-authors' in node['attrs'] and
+                                    _accessible_name(node, {}).strip() for node in document.nodes))
+                self.assertTrue(any('data-publication-venue' in node['attrs'] and
+                                    _accessible_name(node, {}).strip() for node in document.nodes))
+                self.assertTrue(any('data-paper-link' in node['attrs'] and
+                                    node['attrs'].get('href', '').startswith(('https://', 'http://'))
+                                    for node in document.nodes))
+
+    def test_404_uses_root_relative_navigation_and_assets(self):
+        document = self.pages['404.html']
+        links = [node['attrs'].get('href', '') for node in document.nodes
+                 if node['tag'] == 'a' or (node['tag'] == 'link' and
+                                           node['attrs'].get('rel') == 'stylesheet')]
+        scripts = [node['attrs'].get('src', '') for node in document.nodes if node['tag'] == 'script']
+        self.assertTrue(links)
+        self.assertTrue(all(href.startswith(('/', '#', 'https://', 'mailto:')) for href in links), links)
+        self.assertTrue(scripts)
+        self.assertTrue(all(src.startswith(('/', 'https://')) for src in scripts))
+
+    def test_mobile_navigation_remains_available_without_javascript(self):
+        css_files = list(self.public.glob('css/main*.css'))
+        js_files = list(self.public.glob('js/navigation*.js'))
+        self.assertEqual(len(css_files), 1)
+        self.assertEqual(len(js_files), 1)
+        css = css_files[0].read_text(encoding='utf-8')
+        js = js_files[0].read_text(encoding='utf-8')
+        self.assertIn('.js .nav-menu', css)
+        self.assertIn('display:none', css.replace(' ', ''))
+        self.assertIn('document.documentElement.classList.add("js")', js)
+
+    def test_untitled_retained_routes_have_nonempty_page_and_open_graph_titles(self):
+        for route in ('admin.html', 'gallery/methods.html'):
+            with self.subTest(route=route):
+                document = self.pages[route]
+                title = next(node for node in document.nodes if node['tag'] == 'title')
+                og_titles = [node for node in document.nodes if node['tag'] == 'meta' and
+                             node['attrs'].get('property') == 'og:title']
+                self.assertTrue(_accessible_name(title, {}).strip())
+                self.assertEqual(len(og_titles), 1)
+                self.assertTrue((og_titles[0]['attrs'].get('content') or '').strip())
 
 
 if __name__ == '__main__':

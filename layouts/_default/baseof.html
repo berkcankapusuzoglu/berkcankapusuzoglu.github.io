@@ -1,14 +1,15 @@
 <!doctype html>
 <html lang="{{ site.Language.LanguageCode | default "en" }}">
-  <head>{{ partial "head.html" . }}</head>
+  {{ $rootPaths := eq .Title "404 Page not found" }}
+  <head>{{ partial "head.html" (dict "Page" . "RootPaths" $rootPaths) }}</head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    {{ partial "header.html" . }}
+    {{ partial "header.html" (dict "Page" . "RootPaths" $rootPaths) }}
     <main id="main-content" class="site-main" tabindex="-1">
       {{ block "main" . }}{{ end }}
     </main>
-    {{ partial "footer.html" . }}
+    {{ partial "footer.html" (dict "Page" . "RootPaths" $rootPaths) }}
     {{ $navigation := resources.Get "js/navigation.js" | minify | fingerprint }}
-    <script src="{{ $navigation.RelPermalink }}" defer></script>
+    <script src="{{ if $rootPaths }}{{ $navigation.Permalink }}{{ else }}{{ $navigation.RelPermalink }}{{ end }}" defer></script>
   </body>
 </html>

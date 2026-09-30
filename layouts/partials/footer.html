@@ -5,6 +5,6 @@
     {{ with .Site.Params.github }}<li><a href="{{ . }}">GitHub</a></li>{{ end }}
     {{ with .Site.Params.linkedin }}<li><a href="{{ . }}">LinkedIn</a></li>{{ end }}
     {{ with .Site.Params.scholar }}<li><a href="{{ . }}">Google Scholar</a></li>{{ end }}
-    <li><a href="{{ "files/resume/Berkcan_Resume.pdf" | relURL }}">CV (PDF)</a></li>
+    <li><a href="{{ if .RootPaths }}{{ "files/resume/Berkcan_Resume.pdf" | absURL }}{{ else }}{{ "files/resume/Berkcan_Resume.pdf" | relURL }}{{ end }}">CV (PDF)</a></li>
   </ul>
 </footer>

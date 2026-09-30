@@ -1,12 +1,13 @@
 <header class="site-header">
-  <a class="site-name" href="{{ "/" | relURL }}">Berkcan Kapusuzoglu</a>
+  {{ $page := .Page }}
+  <a class="site-name" href="{{ if .RootPaths }}{{ "/" | absURL }}{{ else }}{{ "/" | relURL }}{{ end }}">Berkcan Kapusuzoglu</a>
   <nav aria-label="Primary" class="primary-nav">
     <button class="nav-toggle" type="button" data-nav-toggle aria-controls="primary-menu" aria-expanded="false">
       <span class="visually-hidden">Toggle navigation</span><span aria-hidden="true">Menu</span>
     </button>
     <ul id="primary-menu" data-nav-menu class="nav-menu">
-      {{ range .Site.Menus.main }}
-        <li><a href="{{ .URL | relURL }}"{{ if $.IsMenuCurrent "main" . }} aria-current="page"{{ end }}>{{ .Name }}</a></li>
+      {{ range $page.Site.Menus.main }}
+        <li><a href="{{ if $.RootPaths }}{{ .URL | absURL }}{{ else }}{{ .URL | relURL }}{{ end }}"{{ if $page.IsMenuCurrent "main" . }} aria-current="page"{{ end }}>{{ .Name }}</a></li>
       {{ end }}
     </ul>
   </nav>

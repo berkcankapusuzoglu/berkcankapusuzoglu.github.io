@@ -2,9 +2,50 @@
 
 import argparse
 import posixpath
+import re
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
+
+
+PAGINATOR_REDIRECT_ROUTES = {
+    '/categories/page/1.html',
+    '/gallery/page/1.html',
+    '/news/page/1.html',
+    '/publication-type/2/page/1.html',
+    '/publication_types/page/1.html',
+    '/publications/page/1.html',
+    '/tag/job/page/1.html',
+    '/tag/personal/page/1.html',
+    '/tags/page/1.html',
+}
+
+
+def _is_known_paginator_redirect(document, route: str) -> bool:
+    if route not in PAGINATOR_REDIRECT_ROUTES:
+        return False
+    nodes = document.nodes
+    tags = [node['tag'] for node in nodes]
+    if tags != ['html', 'head', 'title', 'link', 'meta', 'meta', 'meta']:
+        return False
+    expected_path = route.removesuffix('page/1.html').rstrip('/') + '.html'
+    expected_url = f'https://berkcankapusuzoglu.github.io{expected_path}'
+    title, canonical, robots, charset, refresh = nodes[2:]
+    return (
+        _accessible_text(title).strip() == expected_url and
+        canonical['attrs'] == {'rel': 'canonical', 'href': expected_url} and
+        robots['attrs'].get('name') == 'robots' and robots['attrs'].get('content') == 'noindex' and
+        charset['attrs'].get('charset', '').lower() == 'utf-8' and
+        refresh['attrs'].get('http-equiv', '').lower() == 'refresh' and
+        refresh['attrs'].get('content', '').strip().lower() == f'0; url={expected_url}'.lower()
+    )
+
+
+def _has_remote_css_resource(css: str) -> bool:
+    uncommented = re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)
+    remote_url = re.compile(r'''url\s*\(\s*["']?\s*(?:https?:)?//''', re.IGNORECASE)
+    remote_import = re.compile(r'''@import\s+(?:url\s*\(\s*)?["']\s*(?:https?:)?//''', re.IGNORECASE)
+    return bool(remote_url.search(uncommented) or remote_import.search(uncommented))
 
 
 def collect_html_routes(public_dir: Path) -> set[str]:
@@ -80,11 +121,11 @@ def _accessible_name(node, ids):
     return _accessible_text(node)
 
 
-def validate_html_document(path: Path) -> list[str]:
+def validate_html_document(path: Path, route: str | None = None) -> list[str]:
     document = _Document()
     document.feed(path.read_text(encoding='utf-8'))
-    if any(node['tag'] == 'meta' and node['attrs'].get('http-equiv', '').lower() == 'refresh'
-           for node in document.nodes):
+    route = route or '/' + path.as_posix().lstrip('/')
+    if _is_known_paginator_redirect(document, route):
         return []
     errors = []
     visible = [node for node in document.nodes if not node['hidden'] and not node['in_template']]
@@ -117,14 +158,13 @@ def validate_generated_shell(path: Path, public_dir: Path) -> list[str]:
     """Check the shared local shell and its runtime assets on each generated page."""
     document = _Document()
     document.feed(path.read_text(encoding='utf-8'))
-    if any(node['tag'] == 'meta' and node['attrs'].get('http-equiv', '').lower() == 'refresh'
-           for node in document.nodes):
-        return []
-    visible = [node for node in document.nodes if not node['hidden'] and not node['in_template']]
-    errors = []
     route = '/' + path.relative_to(public_dir).as_posix()
     if route == '/index.html':
         route = '/'
+    if _is_known_paginator_redirect(document, route):
+        return []
+    visible = [node for node in document.nodes if not node['hidden'] and not node['in_template']]
+    errors = []
 
     if not any(node['tag'] == 'a' and node['attrs'].get('href') == '#main-content'
                for node in visible):
@@ -153,6 +193,7 @@ def validate_generated_shell(path: Path, public_dir: Path) -> list[str]:
     if not descriptions:
         errors.append('Missing nonempty meta description')
 
+    canonical_host = urlparse(canonicals[0]['attrs'].get('href', '')).netloc if len(canonicals) == 1 else ''
     local_stylesheets = []
     for node in document.nodes:
         attrs = node['attrs']
@@ -160,13 +201,13 @@ def validate_generated_shell(path: Path, public_dir: Path) -> list[str]:
                                        {'stylesheet', 'preconnect', 'preload'}):
             asset = attrs.get('src', attrs.get('href', ''))
             parsed = urlparse(asset)
-            if parsed.netloc:
+            if parsed.netloc and parsed.netloc != canonical_host:
                 errors.append(f'Remote runtime asset: {asset}')
             if 'wowchemy' in asset.lower():
                 errors.append(f'Active Wowchemy asset: {asset}')
         if node['tag'] == 'link' and attrs.get('rel') == 'stylesheet':
             href = attrs.get('href', '')
-            if not urlparse(href).netloc:
+            if not urlparse(href).netloc or urlparse(href).netloc == canonical_host:
                 local_stylesheets.append(href)
     if not local_stylesheets:
         errors.append('Missing local stylesheet')
@@ -181,9 +222,7 @@ def validate_generated_shell(path: Path, public_dir: Path) -> list[str]:
             continue
         if ':focus-visible' not in css:
             errors.append(f'Local stylesheet lacks :focus-visible: {href}')
-        if '@import' in css.lower() and 'https://' in css.lower():
-            errors.append(f'Remote stylesheet import: {href}')
-        if 'url(https://' in css.lower() or 'url("https://' in css.lower():
+        if _has_remote_css_resource(css):
             errors.append(f'Remote font or runtime resource in stylesheet: {href}')
     return [f'{route}: {error}' for error in errors]
 
@@ -199,7 +238,7 @@ def main() -> int:
         for path in sorted(args.public.rglob('*.html')):
             relative = path.relative_to(args.public).as_posix()
             route = '/' if relative == 'index.html' else '/' + relative
-            findings.extend(f'{route}: {error}' for error in validate_html_document(path))
+            findings.extend(f'{route}: {error}' for error in validate_html_document(path, route))
             errors.extend(validate_generated_shell(path, args.public))
         errors.extend(findings)
     except (OSError, ValueError) as error:

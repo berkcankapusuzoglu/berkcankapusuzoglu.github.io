@@ -5,6 +5,30 @@
       <h1>{{ .Title | default site.Title }}</h1>
       {{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}
     </header>
+    {{ with .Params.publication }}<p class="publication-venue" data-publication-venue>{{ . | plainify }}</p>{{ end }}
+    {{ with .Params.authors }}
+      <p class="publication-authors" data-publication-authors><strong>Authors:</strong>
+        {{ range $index, $author := . }}{{ if $index }}, {{ end }}{{ $author | plainify }}{{ end }}
+      </p>
+    {{ end }}
+    {{ with .Params.abstract }}
+      <section class="publication-abstract" data-publication-abstract>
+        <h2>Abstract</h2>
+        <p>{{ . | plainify }}</p>
+      </section>
+    {{ end }}
+    {{ with .Params.links }}
+      <ul class="publication-links">
+        {{ range . }}
+          {{ $link := . }}
+          {{ with $link.url }}
+            {{ $label := $link.name }}
+            {{ if or (not $label) (eq (lower $label) "link") }}{{ $label = "Read the paper" }}{{ end }}
+            <li><a data-paper-link href="{{ . }}">{{ $label | plainify }}</a></li>
+          {{ end }}
+        {{ end }}
+      </ul>
+    {{ end }}
     {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
   </article>
 {{ end }}
