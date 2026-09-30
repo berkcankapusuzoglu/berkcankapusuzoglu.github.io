@@ -8,7 +8,7 @@
     {{ with .Params.publication }}<p class="publication-venue" data-publication-venue>{{ . | plainify }}</p>{{ end }}
     {{ with .Params.authors }}
       <p class="publication-authors" data-publication-authors><strong>Authors:</strong>
-        {{ range $index, $author := . }}{{ if $index }}, {{ end }}{{ $author | plainify }}{{ end }}
+        {{ range $index, $author := . }}{{ if $index }}, {{ end }}{{ $author | replaceRE "\\*\\*" "" | plainify }}{{ end }}
       </p>
     {{ end }}
     {{ with .Params.abstract }}

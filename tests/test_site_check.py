@@ -197,7 +197,8 @@ class GeneratedShellTests(unittest.TestCase):
         cls.pages = {}
         for route in ('index.html', 'publications.html',
                       'publications/2024_sarwar_neurips_efficient_natural_language_and_speech_processing_workshop.html',
-                      '404.html', 'admin.html', 'gallery/methods.html'):
+                      '404.html', 'admin.html', 'gallery/methods.html',
+                      'news/job/job.html'):
             document = _Document()
             document.feed((cls.public / route).read_text(encoding='utf-8'))
             cls.pages[route] = document
@@ -241,6 +242,16 @@ class GeneratedShellTests(unittest.TestCase):
                 if node['tag'] == 'a' and 'href' in node['attrs']:
                     with self.subTest(route=route, href=node['attrs']['href']):
                         self.assertTrue(_accessible_name(node, ids).strip())
+
+    def test_home_and_404_include_all_professional_footer_links(self):
+        expected = {'Email', 'GitHub', 'LinkedIn', 'Google Scholar', 'CV (PDF)'}
+        for route in ('index.html', '404.html'):
+            with self.subTest(route=route):
+                document = self.pages[route]
+                ids = {n['attrs']['id']: n for n in document.nodes if n['attrs'].get('id')}
+                labels = {_accessible_name(n, ids).strip() for n in document.nodes
+                          if n['tag'] == 'a'}
+                self.assertTrue(expected <= labels, expected - labels)
 
     def test_canonical_and_description_are_nonempty(self):
         for route, document in self.pages.items():
@@ -292,11 +303,21 @@ class GeneratedShellTests(unittest.TestCase):
                                     _accessible_name(node, {}).strip() for node in document.nodes))
                 self.assertTrue(any('data-publication-authors' in node['attrs'] and
                                     _accessible_name(node, {}).strip() for node in document.nodes))
+                authors = next(node for node in document.nodes
+                               if 'data-publication-authors' in node['attrs'])
+                author_text = _accessible_name(authors, {})
+                self.assertNotIn('**', author_text)
+                self.assertIn('Berkcan Kapusuzoglu', author_text)
                 self.assertTrue(any('data-publication-venue' in node['attrs'] and
                                     _accessible_name(node, {}).strip() for node in document.nodes))
                 self.assertTrue(any('data-paper-link' in node['attrs'] and
                                     node['attrs'].get('href', '').startswith(('https://', 'http://'))
                                     for node in document.nodes))
+
+    def test_public_job_announcement_hides_internal_business_unit_name(self):
+        output = (self.public / 'news/job/job.html').read_text(encoding='utf-8')
+        self.assertNotIn('AI Foundations / LLM Training Team', output)
+        self.assertNotIn('under Capital One AI Foundations', output)
 
     def test_404_uses_root_relative_navigation_and_assets(self):
         document = self.pages['404.html']
