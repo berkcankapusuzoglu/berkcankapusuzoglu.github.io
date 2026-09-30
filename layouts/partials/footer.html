@@ -1,0 +1,10 @@
+<footer class="site-footer">
+  <p>© {{ now.Year }} Berkcan Kapusuzoglu</p>
+  <ul class="social-links" aria-label="Professional links">
+    {{ with .Site.Params.email }}<li><a href="mailto:{{ . }}">Email</a></li>{{ end }}
+    {{ with .Site.Params.github }}<li><a href="{{ . }}">GitHub</a></li>{{ end }}
+    {{ with .Site.Params.linkedin }}<li><a href="{{ . }}">LinkedIn</a></li>{{ end }}
+    {{ with .Site.Params.scholar }}<li><a href="{{ . }}">Google Scholar</a></li>{{ end }}
+    <li><a href="{{ "files/resume/Berkcan_Resume.pdf" | relURL }}">CV (PDF)</a></li>
+  </ul>
+</footer>

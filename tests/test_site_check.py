@@ -1,14 +1,16 @@
 import subprocess
-import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
 
 from scripts.site_check import (
     collect_html_routes,
     validate_expected_routes,
     validate_html_document,
+    _Document,
+    _accessible_name,
 )
 
 
@@ -134,48 +136,117 @@ class SiteCheckTests(unittest.TestCase):
         self.assertIn('Missing route: /old.html', result.stdout)
         self.assertIn('/: Missing main landmark', result.stdout)
 
-    def run_cli(self, body, expected='/', allowlist=None):
+    def run_cli(self, body, expected='/'):
         (self.root / 'index.html').write_text(body, encoding='utf-8')
+        (self.root / 'assets').mkdir(exist_ok=True)
+        (self.root / 'assets/main.css').write_text(':focus-visible { outline: 3px solid blue; }', encoding='utf-8')
         urls = self.root / 'urls.txt'
         urls.write_text(expected, encoding='utf-8')
         command = [sys.executable, 'scripts/site_check.py', '--public',
                    str(self.root), '--expected', str(urls)]
-        if allowlist is not None:
-            exceptions = self.root / 'allowlist.json'
-            exceptions.write_text(json.dumps(allowlist), encoding='utf-8')
-            command.extend(['--allowlist', str(exceptions)])
         return subprocess.run(command, capture_output=True, text=True)
 
     def test_cli_accepts_valid_output(self):
-        result = self.run_cli('<main><h1>A</h1></main>')
+        result = self.run_cli('''<a href="#main-content">Skip</a><header><nav aria-label="Primary">
+          <button data-nav-toggle aria-controls="menu"></button><ul id="menu" data-nav-menu></ul>
+          </nav></header><main id="main-content"><h1>A</h1></main><footer></footer>
+          <link rel="canonical" href="https://example.org/"><meta name="description" content="Page">
+          <link rel="stylesheet" href="/assets/main.css">''')
         self.assertEqual(result.returncode, 0)
 
-    def test_exact_allowlist_entry_accepts_known_finding(self):
-        result = self.run_cli('<h1>A</h1>', allowlist=['/: Missing main landmark'])
-        self.assertEqual(result.returncode, 0)
 
-    def test_allowlist_does_not_suppress_missing_routes(self):
-        result = self.run_cli('<h1>A</h1>', '/\n/old.html',
-                              ['/: Missing main landmark', 'Missing route: /old.html'])
-        self.assertEqual(result.returncode, 1)
-        self.assertIn('Missing route: /old.html', result.stdout)
+class GeneratedShellTests(unittest.TestCase):
+    """Exercise generated pages: removing a shell feature must break its contract."""
 
-    def test_allowlist_limits_occurrences_of_each_finding(self):
-        result = self.run_cli('<main><h1>A</h1><a href="/x"></a><a href="/x"></a></main>',
-                              allowlist=['/: Link missing accessible text: /x'])
-        self.assertEqual(result.returncode, 1)
-        self.assertEqual(result.stdout.count('/: Link missing accessible text: /x'), 1)
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temp.cleanup)
+        cls.public = Path(cls.temp.name)
+        result = subprocess.run(['hugo', '--minify', '--panicOnWarning',
+                                 '--printPathWarnings', '--destination', str(cls.public)],
+                                capture_output=True, text=True)
+        if result.returncode:
+            raise RuntimeError(result.stdout + result.stderr)
+        cls.pages = {}
+        for route in ('index.html', 'publications.html',
+                      'publications/2024_sarwar_neurips_efficient_natural_language_and_speech_processing_workshop.html',
+                      '404.html'):
+            document = _Document()
+            document.feed((cls.public / route).read_text(encoding='utf-8'))
+            cls.pages[route] = document
 
-    def test_stale_allowlist_entries_fail(self):
-        result = self.run_cli('<main><h1>A</h1></main>',
-                              allowlist=['/: Missing main landmark'])
-        self.assertEqual(result.returncode, 1)
-        self.assertIn('Stale allowlist finding', result.stdout)
+    def visible(self, document):
+        return [node for node in document.nodes if not node['hidden'] and not node['in_template']]
 
-    def test_allowlist_requires_a_list_of_strings(self):
-        result = self.run_cli('<main><h1>A</h1></main>', allowlist={})
-        self.assertEqual(result.returncode, 1)
-        self.assertIn('Allowlist must be a JSON list of strings', result.stdout)
+    def test_representative_pages_have_one_meaningful_h1(self):
+        for route, document in self.pages.items():
+            with self.subTest(route=route):
+                headings = [n for n in self.visible(document) if n['tag'] == 'h1']
+                self.assertEqual(len(headings), 1)
+                self.assertTrue(_accessible_name(headings[0], {}).strip())
+
+    def test_skip_link_targets_visible_main_content(self):
+        for route, document in self.pages.items():
+            with self.subTest(route=route):
+                nodes = self.visible(document)
+                self.assertTrue(any(n['tag'] == 'a' and n['attrs'].get('href') == '#main-content'
+                                    for n in nodes), 'Missing skip link')
+                self.assertTrue(any(n['tag'] == 'main' and n['attrs'].get('id') == 'main-content'
+                                    for n in nodes), 'Missing main-content landmark')
+
+    def test_primary_navigation_has_a_label_and_real_mobile_button(self):
+        for route, document in self.pages.items():
+            with self.subTest(route=route):
+                nodes = self.visible(document)
+                self.assertTrue(any(n['tag'] == 'nav' and n['attrs'].get('aria-label') == 'Primary'
+                                    for n in nodes), 'Missing labelled primary navigation')
+                toggles = [n for n in nodes if 'data-nav-toggle' in n['attrs']]
+                self.assertEqual(len(toggles), 1, 'Missing mobile navigation toggle')
+                self.assertEqual(toggles[0]['tag'], 'button')
+                menus = [n for n in nodes if 'data-nav-menu' in n['attrs']]
+                self.assertEqual(len(menus), 1)
+                self.assertEqual(toggles[0]['attrs'].get('aria-controls'), menus[0]['attrs'].get('id'))
+
+    def test_every_link_has_an_accessible_name(self):
+        for route, document in self.pages.items():
+            ids = {n['attrs']['id']: n for n in document.nodes if n['attrs'].get('id')}
+            for node in document.nodes:
+                if node['tag'] == 'a' and 'href' in node['attrs']:
+                    with self.subTest(route=route, href=node['attrs']['href']):
+                        self.assertTrue(_accessible_name(node, ids).strip())
+
+    def test_canonical_and_description_are_nonempty(self):
+        for route, document in self.pages.items():
+            with self.subTest(route=route):
+                canonicals = [n for n in document.nodes if n['tag'] == 'link'
+                              and n['attrs'].get('rel') == 'canonical']
+                self.assertEqual(len(canonicals), 1)
+                self.assertTrue(canonicals[0]['attrs'].get('href', '').startswith(
+                    'https://berkcankapusuzoglu.github.io/'))
+                self.assertTrue(any(n['tag'] == 'meta' and n['attrs'].get('name') == 'description'
+                                    and n['attrs'].get('content', '').strip() for n in document.nodes))
+
+    def test_linked_local_stylesheet_has_keyboard_visible_focus(self):
+        for route, document in self.pages.items():
+            with self.subTest(route=route):
+                styles = [n['attrs'].get('href', '') for n in document.nodes if n['tag'] == 'link'
+                          and n['attrs'].get('rel') == 'stylesheet']
+                local = [href for href in styles if not urlparse(href).netloc]
+                self.assertTrue(local, 'Missing local stylesheet')
+                css = ''.join((self.public / urlparse(urljoin('/' + route, href)).path.lstrip('/'))
+                              .read_text(encoding='utf-8') for href in local)
+                self.assertIn(':focus-visible', css)
+
+    def test_no_remote_runtime_assets_or_wowchemy(self):
+        for route, document in self.pages.items():
+            for node in document.nodes:
+                if node['tag'] == 'script' or (node['tag'] == 'link' and
+                        node['attrs'].get('rel') in {'stylesheet', 'preconnect', 'preload'}):
+                    asset = node['attrs'].get('src', node['attrs'].get('href', ''))
+                    with self.subTest(route=route, asset=asset):
+                        self.assertFalse(urlparse(asset).netloc, 'Remote runtime asset')
+                        self.assertNotIn('wowchemy', asset.lower())
 
 
 if __name__ == '__main__':

@@ -35,8 +35,7 @@ jobs:
       - name: Build
         run: hugo --minify --panicOnWarning --printPathWarnings
       - name: Validate routes and HTML
-        # Task 2 removes the exact legacy-theme structural exceptions.
-        run: python scripts/site_check.py --public public --expected tests/expected-urls.txt --allowlist tests/legacy-html-allowlist.json
+        run: python scripts/site_check.py --public public --expected tests/expected-urls.txt
       - uses: actions/upload-artifact@v4
         with:
           name: site-public

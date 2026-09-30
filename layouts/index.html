@@ -1,0 +1,9 @@
+{{ define "main" }}
+  <section class="home-intro">
+    <p class="eyebrow">{{ .Site.Params.role }}</p>
+    <h1>{{ .Site.Params.positioning | default "Research and engineering for efficient, reliable language models." }}</h1>
+    <p class="lede">{{ .Site.Params.description | default "I work across applied AI research, model efficiency, and reliable machine learning systems." }}</p>
+    <p><a class="button-link" href="{{ "publications.html" | relURL }}">Explore publications</a></p>
+  </section>
+  {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
+{{ end }}

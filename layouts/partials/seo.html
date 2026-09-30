@@ -1,0 +1,7 @@
+{{- $description := .Description | default .Summary | default site.Params.description | default "Research and engineering for efficient, reliable language models." -}}
+<title>{{ if .IsHome }}Staff Applied Researcher - AI Foundations{{ else }}{{ .Title }} · Berkcan Kapusuzoglu{{ end }}</title>
+<meta name="description" content="{{ $description | plainify | htmlEscape }}">
+<link rel="canonical" href="{{ .Permalink }}">
+<meta property="og:title" content="{{ if .IsHome }}Staff Applied Researcher - AI Foundations{{ else }}{{ .Title }}{{ end }}">
+<meta property="og:description" content="{{ $description | plainify | htmlEscape }}">
+<meta property="og:url" content="{{ .Permalink }}">

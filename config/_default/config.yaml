@@ -1,4 +1,3 @@
-theme: "starter-hugo-academic"
 # Configuration of Hugo
 # Guide: https://wowchemy.com/docs/getting-started/
 # Hugo Documentation: https://gohugo.io/getting-started/configuration/#all-configuration-settings
@@ -8,6 +7,14 @@ title: Berkcan Kapusuzoglu # Website name
 baseURL: 'https://berkcankapusuzoglu.github.io/' # Website URL
 relativeURLs: true
 uglyURLs: true
+params:
+  role: Staff Applied Researcher - AI Foundations
+  positioning: I lead research and engineering for efficient, reliable language models.
+  description: Applied AI research across language model reasoning, efficiency, and reliable machine learning systems.
+  email: berkcankapusuzoglu@gmail.com
+  github: https://github.com/berkcankapusuzoglu
+  linkedin: https://www.linkedin.com/in/berkcankapusuzoglu/
+  scholar: https://scholar.google.com/citations?user=iv1vNTYAAAAJ&hl=en&oi=ao
 
 ############################
 ## LANGUAGE
@@ -21,12 +28,6 @@ removePathAccents: true
 ############################
 ## MODULES
 ############################
-
-module:
-  imports:
-    - path: github.com/wowchemy/wowchemy-hugo-themes/modules/wowchemy-plugin-netlify-cms
-    - path: github.com/wowchemy/wowchemy-hugo-themes/modules/wowchemy-plugin-netlify
-    - path: github.com/wowchemy/wowchemy-hugo-themes/modules/wowchemy/v5
 
 ############################
 ## ADVANCED
@@ -47,7 +48,7 @@ permalinks:
   blog: '/blog/:slug'
 disableAliases: true
 outputs:
-  home: [HTML, RSS, JSON, WebAppManifest, headers, redirects]
+  home: [HTML, RSS]
   section: [HTML, RSS]
 imaging:
   resampleFilter: lanczos

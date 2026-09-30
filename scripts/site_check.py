@@ -1,10 +1,10 @@
 """Validate generated routes and basic HTML accessibility without dependencies."""
 
 import argparse
-import json
-from collections import Counter
+import posixpath
 from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
 
 
 def collect_html_routes(public_dir: Path) -> set[str]:
@@ -83,6 +83,9 @@ def _accessible_name(node, ids):
 def validate_html_document(path: Path) -> list[str]:
     document = _Document()
     document.feed(path.read_text(encoding='utf-8'))
+    if any(node['tag'] == 'meta' and node['attrs'].get('http-equiv', '').lower() == 'refresh'
+           for node in document.nodes):
+        return []
     errors = []
     visible = [node for node in document.nodes if not node['hidden'] and not node['in_template']]
     headings = [node for node in visible if node['tag'] == 'h1']
@@ -110,12 +113,85 @@ def validate_html_document(path: Path) -> list[str]:
     return errors
 
 
+def validate_generated_shell(path: Path, public_dir: Path) -> list[str]:
+    """Check the shared local shell and its runtime assets on each generated page."""
+    document = _Document()
+    document.feed(path.read_text(encoding='utf-8'))
+    if any(node['tag'] == 'meta' and node['attrs'].get('http-equiv', '').lower() == 'refresh'
+           for node in document.nodes):
+        return []
+    visible = [node for node in document.nodes if not node['hidden'] and not node['in_template']]
+    errors = []
+    route = '/' + path.relative_to(public_dir).as_posix()
+    if route == '/index.html':
+        route = '/'
+
+    if not any(node['tag'] == 'a' and node['attrs'].get('href') == '#main-content'
+               for node in visible):
+        errors.append('Missing skip link to #main-content')
+    if not any(node['tag'] == 'main' and node['attrs'].get('id') == 'main-content'
+               for node in visible):
+        errors.append('Missing visible main#main-content landmark')
+    if not any(node['tag'] == 'nav' and node['attrs'].get('aria-label') == 'Primary'
+               for node in visible):
+        errors.append('Missing labelled Primary navigation')
+    toggles = [node for node in visible if 'data-nav-toggle' in node['attrs']]
+    menus = [node for node in visible if 'data-nav-menu' in node['attrs']]
+    if len(toggles) != 1 or toggles[0]['tag'] != 'button':
+        errors.append('Mobile navigation requires exactly one real toggle button')
+    elif (len(menus) != 1 or not menus[0]['attrs'].get('id') or
+          toggles[0]['attrs'].get('aria-controls') != menus[0]['attrs'].get('id')):
+        errors.append('Mobile navigation toggle must control its menu')
+
+    canonicals = [node for node in document.nodes if node['tag'] == 'link'
+                  and node['attrs'].get('rel') == 'canonical']
+    if len(canonicals) != 1 or not canonicals[0]['attrs'].get('href', '').strip():
+        errors.append('Expected one nonempty canonical URL')
+    descriptions = [node for node in document.nodes if node['tag'] == 'meta'
+                    and node['attrs'].get('name', '').lower() == 'description'
+                    and node['attrs'].get('content', '').strip()]
+    if not descriptions:
+        errors.append('Missing nonempty meta description')
+
+    local_stylesheets = []
+    for node in document.nodes:
+        attrs = node['attrs']
+        if node['tag'] == 'script' or (node['tag'] == 'link' and attrs.get('rel') in
+                                       {'stylesheet', 'preconnect', 'preload'}):
+            asset = attrs.get('src', attrs.get('href', ''))
+            parsed = urlparse(asset)
+            if parsed.netloc:
+                errors.append(f'Remote runtime asset: {asset}')
+            if 'wowchemy' in asset.lower():
+                errors.append(f'Active Wowchemy asset: {asset}')
+        if node['tag'] == 'link' and attrs.get('rel') == 'stylesheet':
+            href = attrs.get('href', '')
+            if not urlparse(href).netloc:
+                local_stylesheets.append(href)
+    if not local_stylesheets:
+        errors.append('Missing local stylesheet')
+    for href in local_stylesheets:
+        target_url = urljoin('https://site.invalid' + route, href)
+        target_path = posixpath.normpath(urlparse(target_url).path.lstrip('/'))
+        css_path = public_dir / Path(target_path)
+        try:
+            css = css_path.read_text(encoding='utf-8')
+        except OSError:
+            errors.append(f'Missing local stylesheet file: {href}')
+            continue
+        if ':focus-visible' not in css:
+            errors.append(f'Local stylesheet lacks :focus-visible: {href}')
+        if '@import' in css.lower() and 'https://' in css.lower():
+            errors.append(f'Remote stylesheet import: {href}')
+        if 'url(https://' in css.lower() or 'url("https://' in css.lower():
+            errors.append(f'Remote font or runtime resource in stylesheet: {href}')
+    return [f'{route}: {error}' for error in errors]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--public', type=Path, required=True)
     parser.add_argument('--expected', type=Path, required=True)
-    parser.add_argument('--allowlist', type=Path,
-                        help='Temporary JSON list of exact legacy HTML findings; remove in Task 2')
     args = parser.parse_args()
     try:
         errors = validate_expected_routes(collect_html_routes(args.public), args.expected)
@@ -124,20 +200,14 @@ def main() -> int:
             relative = path.relative_to(args.public).as_posix()
             route = '/' if relative == 'index.html' else '/' + relative
             findings.extend(f'{route}: {error}' for error in validate_html_document(path))
-        entries = json.loads(args.allowlist.read_text(encoding='utf-8')) if args.allowlist else []
-        if not isinstance(entries, list) or not all(isinstance(entry, str) for entry in entries):
-            raise ValueError('Allowlist must be a JSON list of strings')
-        allowed = Counter(entries)
-        errors.extend((Counter(findings) - allowed).elements())
-        errors.extend(f'Stale allowlist finding: {finding}'
-                      for finding in (allowed - Counter(findings)).elements())
+            errors.extend(validate_generated_shell(path, args.public))
+        errors.extend(findings)
     except (OSError, ValueError) as error:
         errors = [str(error)]
     for error in errors:
         print(error)
     if not errors:
-        print('Site checks passed' + (f' ({sum(allowed.values())} temporary legacy findings allowed)'
-                                    if allowed else ''))
+        print('Site checks passed')
     return 1 if errors else 0
 
 
