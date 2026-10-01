@@ -35,4 +35,4 @@ Primary sources are linked per-record in the source ledger. Key sources include 
 - Required-field Hugo errors were observed before normalizing legacy records, then resolved by adding the missing canonical fields.
 - The test for featured weight order checks both the three explicit per-record weights and the production selector's use of `Params.featured_weight`. Homepage composition belongs to Task 4 and was not modified here.
 - The browser viewport was reset after inspection. No production site or external service was changed.
-- Commit SHA: `494b3cac36f247f2c102a08e2e824374cdf783e0` (`content: curate and expand publication record`).
+- Task 3 implementation commit SHA: `f242133514fdf3f7ef7154f8811160be3c4fd0ac` (`content: curate and expand publication record`).
