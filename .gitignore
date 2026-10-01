@@ -3,6 +3,7 @@
 /assets/jsconfig.json
 .hugo_build.lock
 __pycache__/
+.worktrees/
 
 # Latex files
 ./static/files/resume/resume*.aux
