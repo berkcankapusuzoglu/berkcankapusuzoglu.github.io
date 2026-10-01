@@ -499,6 +499,14 @@ class GeneratedShellTests(unittest.TestCase):
         h1 = next(node for node in document.nodes if node['tag'] == 'h1')
         self.assertLess(document.nodes.index(h1), document.nodes.index(portraits[0]))
 
+    def test_homepage_shows_professional_arc_beyond_education(self):
+        text = ' '.join(_accessible_text(node) for node in self.visible(self.pages['index.html'])).casefold()
+        self.assertIn('scientific', text)
+        self.assertIn('physics-informed', text)
+        self.assertIn('language-model research', text)
+        self.assertIn('research-led production ai leadership', text)
+        self.assertIn('ph.d. in civil engineering', text)
+
     def test_homepage_avoids_private_or_generic_positioning(self):
         html = (self.public / 'index.html').read_text(encoding='utf-8').lower()
         for phrase in ('personal page', 'cutting-edge', '2,048 gpus', '15b–120b', 'financial impact'):
@@ -579,7 +587,9 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertTrue(any('/research/trustworthy-ml.html' in href for href in hrefs))
 
     def test_new_narrative_pages_avoid_confidential_claims(self):
-        for route in ('research.html', 'leadership.html', 'about.html', 'writing.html'):
+        for route in ('research.html', 'research/reasoning-and-distillation.html',
+                      'research/efficient-model-systems.html', 'research/trustworthy-ml.html',
+                      'leadership.html', 'about.html', 'writing.html'):
             with self.subTest(route=route):
                 document = _Document()
                 document.feed((self.public / route).read_text(encoding='utf-8'))
@@ -587,6 +597,19 @@ class GeneratedShellTests(unittest.TestCase):
                 for phrase in ('2,048 gpus', '15b–120b', 'financial impact', 'capital one, ai foundations', 'cutting-edge'):
                     self.assertNotIn(phrase, text)
                 self.assertNotRegex(text, r'\b\d{5}(?:-\d{4})?\b')
+
+    def test_about_uses_exact_official_title(self):
+        document = _Document()
+        document.feed((self.public / 'about.html').read_text(encoding='utf-8'))
+        text = ' '.join(_accessible_text(node) for node in self.visible(document))
+        self.assertIn('Staff Applied Researcher - AI Foundations', text)
+
+    def test_research_notes_explains_publishable_and_reusable_content(self):
+        document = _Document()
+        document.feed((self.public / 'writing.html').read_text(encoding='utf-8'))
+        text = ' '.join(_accessible_text(node) for node in self.visible(document)).casefold()
+        self.assertIn('publishable articles and ideas', text)
+        self.assertIn('linkedin', text)
 
 
 if __name__ == '__main__':
