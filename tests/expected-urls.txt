@@ -5,16 +5,10 @@
 /404.html
 /about.html
 /about/page/1.html
-/admin.html
 /categories.html
 /categories/page/1.html
-/gallery.html
-/gallery/methods.html
-/gallery/page/1.html
-/gallery/systems.html
 /news.html
 /news/job/job.html
-/news/page/1.html
 /news/personal/personal.html
 /publication-type/2.html
 /publication-type/2/page/1.html
@@ -51,10 +45,6 @@
 /research/trustworthy-ml.html
 /leadership.html
 /leadership/page/1.html
-/tag/job.html
-/tag/job/page/1.html
-/tag/personal.html
-/tag/personal/page/1.html
 /tags.html
 /tags/page/1.html
 /page/1.html

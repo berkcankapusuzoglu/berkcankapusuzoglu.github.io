@@ -159,6 +159,21 @@ class SiteCheckTests(unittest.TestCase):
             with self.subTest(route=route):
                 self.assertEqual(validate_html_document(redirect, route), [])
 
+    def test_local_news_redirect_routes_are_recognized(self):
+        redirects = {'/news.html': '/writing.html',
+                     '/news/job/job.html': '/about.html',
+                     '/news/personal/personal.html': '/research/efficient-model-systems.html'}
+        for route, target_path in redirects.items():
+            target = f'https://berkcankapusuzoglu.github.io{target_path}'
+            redirect = self.root / route.lstrip('/')
+            redirect.parent.mkdir(parents=True, exist_ok=True)
+            redirect.write_text(f'''<!doctype html><html lang="en-us"><head><title>{target}</title>
+              <link rel="canonical" href="{target}"><meta name="robots" content="noindex">
+              <meta charset="utf-8"><meta http-equiv="refresh" content="0; url={target}">
+              </head></html>''', encoding='utf-8')
+            with self.subTest(route=route):
+                self.assertEqual(validate_html_document(redirect, route), [])
+
     def test_cli_reports_errors_and_fails(self):
         (self.root / 'index.html').write_text('<h1>A</h1>', encoding='utf-8')
         expected = self.root / 'urls.txt'
@@ -222,8 +237,7 @@ class GeneratedShellTests(unittest.TestCase):
         for route in ('index.html', 'publications.html',
                       'publications/2024_sarwar_neurips_efficient_natural_language_and_speech_processing_workshop.html',
                       'publications/2021_witherell_paul_witherell_berkcan_kapusuzoglu_matthew_sato_sankaran_mahadevan.html',
-                      '404.html', 'admin.html', 'gallery/methods.html',
-                      'news/job/job.html'):
+                      '404.html'):
             document = _Document()
             document.feed((cls.public / route).read_text(encoding='utf-8'))
             cls.pages[route] = document
@@ -402,10 +416,14 @@ class GeneratedShellTests(unittest.TestCase):
                                     node['attrs'].get('href', '').startswith(('https://', 'http://'))
                                     for node in document.nodes))
 
-    def test_public_job_announcement_hides_internal_business_unit_name(self):
-        output = (self.public / 'news/job/job.html').read_text(encoding='utf-8')
-        self.assertNotIn('AI Foundations / LLM Training Team', output)
-        self.assertNotIn('under Capital One AI Foundations', output)
+    def test_legacy_news_routes_redirect_to_current_context(self):
+        targets = {'news.html': '/writing.html', 'news/job/job.html': '/about.html',
+                   'news/personal/personal.html': '/research/efficient-model-systems.html'}
+        for route, target in targets.items():
+            with self.subTest(route=route):
+                output = (self.public / route).read_text(encoding='utf-8')
+                self.assertIn('name="robots" content="noindex"', output)
+                self.assertIn(f'url=https://berkcankapusuzoglu.github.io{target}', output)
 
     def test_publications_have_complete_unambiguous_metadata(self):
         for path in (self.public / 'publications').glob('*.html'):
@@ -522,16 +540,39 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertIn('display:none', css.replace(' ', ''))
         self.assertIn('document.documentElement.classList.add("js")', js)
 
-    def test_untitled_retained_routes_have_nonempty_page_and_open_graph_titles(self):
-        for route in ('admin.html', 'gallery/methods.html'):
-            with self.subTest(route=route):
-                document = self.pages[route]
-                title = next(node for node in document.nodes if node['tag'] == 'title')
-                og_titles = [node for node in document.nodes if node['tag'] == 'meta' and
-                             node['attrs'].get('property') == 'og:title']
-                self.assertTrue(_accessible_name(title, {}).strip())
-                self.assertEqual(len(og_titles), 1)
-                self.assertTrue((og_titles[0]['attrs'].get('content') or '').strip())
+    def test_admin_and_blank_gallery_routes_are_retired(self):
+        routes = collect_html_routes(self.public)
+        self.assertNotIn('/admin.html', routes)
+        self.assertFalse(any(route.startswith('/gallery') for route in routes))
+
+    def test_generated_output_has_no_legacy_integrations_or_assets(self):
+        html = '\n'.join(path.read_text(encoding='utf-8').lower()
+                         for path in self.public.rglob('*.html'))
+        for marker in ('netlify identity', 'wowchemy', 'jquery', 'codefolding',
+                       'themes/matteo-custom', 'themes/starter-hugo-academic',
+                       'themes/github.com/wowchemy', '.submodule/scholar-collector'):
+            with self.subTest(marker=marker):
+                self.assertNotIn(marker, html)
+        for route, document in self.all_pages.items():
+            for node in document.nodes:
+                if node['tag'] == 'script' or (node['tag'] == 'link' and
+                                                node['attrs'].get('rel') == 'stylesheet'):
+                    asset = node['attrs'].get('src', node['attrs'].get('href', '')).lower()
+                    with self.subTest(route=route, asset=asset):
+                        self.assertNotRegex(asset, r'jquery|codefold|rmarkdown|wowchemy|netlify')
+        self.assertFalse(any('/gallery' in node['attrs'].get('href', '').lower()
+                             for document in self.all_pages.values()
+                             for node in document.nodes if node['tag'] == 'a'))
+
+    def test_professional_social_links_are_never_hidden(self):
+        for route, document in self.all_pages.items():
+            for node in document.nodes:
+                href = node['attrs'].get('href', '').lower()
+                if node['tag'] == 'a' and any(marker in href for marker in
+                                               ('linkedin.com', 'github.com', 'scholar.google.com')):
+                    with self.subTest(route=route, href=href):
+                        self.assertFalse(node['hidden'])
+                        self.assertFalse(node['in_template'])
 
     def test_homepage_has_research_leadership_positioning_and_public_links(self):
         document = self.pages['index.html']
@@ -587,6 +628,9 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertEqual(portraits[0]['attrs'].get('alt'), 'Portrait of Berkcan Kapusuzoglu')
         h1 = next(node for node in document.nodes if node['tag'] == 'h1')
         self.assertLess(document.nodes.index(h1), document.nodes.index(portraits[0]))
+        portrait_file = self.public / 'authors/admin/avatar.jpg'
+        self.assertTrue(portrait_file.is_file())
+        self.assertGreater(portrait_file.stat().st_size, 0)
 
     def test_homepage_shows_professional_arc_beyond_education(self):
         text = ' '.join(_accessible_text(node) for node in self.visible(self.pages['index.html'])).casefold()

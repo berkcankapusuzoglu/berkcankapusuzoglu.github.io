@@ -12,9 +12,7 @@ PAGINATOR_REDIRECT_ROUTES = {
     '/404/page/1.html',
     '/about/page/1.html',
     '/categories/page/1.html',
-    '/gallery/page/1.html',
     '/leadership/page/1.html',
-    '/news/page/1.html',
     '/publication-type/2/page/1.html',
     '/publication_types/page/1.html',
     '/publications/page/1.html',
@@ -25,16 +23,24 @@ PAGINATOR_REDIRECT_ROUTES = {
     '/tags/page/1.html',
     '/writing/page/1.html',
 }
+LOCAL_REDIRECT_TARGETS = {
+    '/news.html': '/writing.html',
+    '/news/job/job.html': '/about.html',
+    '/news/personal/personal.html': '/research/efficient-model-systems.html',
+}
 
 
 def _is_known_paginator_redirect(document, route: str) -> bool:
-    if route not in PAGINATOR_REDIRECT_ROUTES:
+    if route not in PAGINATOR_REDIRECT_ROUTES and route not in LOCAL_REDIRECT_TARGETS:
         return False
     nodes = document.nodes
     tags = [node['tag'] for node in nodes]
     if tags != ['html', 'head', 'title', 'link', 'meta', 'meta', 'meta']:
         return False
-    expected_path = '/' if route == '/page/1.html' else route.removesuffix('page/1.html').rstrip('/') + '.html'
+    if route in LOCAL_REDIRECT_TARGETS:
+        expected_path = LOCAL_REDIRECT_TARGETS[route]
+    else:
+        expected_path = '/' if route == '/page/1.html' else route.removesuffix('page/1.html').rstrip('/') + '.html'
     expected_url = f'https://berkcankapusuzoglu.github.io{expected_path}'
     title, canonical, robots, charset, refresh = nodes[2:]
     return (

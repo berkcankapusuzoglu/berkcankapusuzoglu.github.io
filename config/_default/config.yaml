@@ -1,5 +1,4 @@
-# Configuration of Hugo
-# Guide: https://wowchemy.com/docs/getting-started/
+# Hugo site configuration
 # Hugo Documentation: https://gohugo.io/getting-started/configuration/#all-configuration-settings
 # This file is formatted using YAML syntax - learn more at https://learnxinyminutes.com/docs/yaml/
 
@@ -39,7 +38,13 @@ pagination:
 enableEmoji: true
 enableRobotsTXT: true
 footnotereturnlinkcontents: <sup>^</sup>
-ignoreFiles: [\.ipynb$, .ipynb_checkpoints$, \.Rmd$, \.Rmarkdown$, _cache$]
+ignoreFiles:
+  - '\.ipynb$'
+  - '\.ipynb_checkpoints$'
+  - '\.Rmd$'
+  - '\.Rmarkdown$'
+  - '_cache$'
+  - '[\\/]content[\\/](admin|home|gallery|news)[\\/]'
 permalinks:
   event: '/talk/:slug/'
   tags: '/tag/:slug/'
