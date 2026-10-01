@@ -1,0 +1,33 @@
+name: Berkcan Kapusuzoglu
+title: Staff Applied Researcher - AI Foundations
+positioning: I lead research and engineering for efficient, reliable language models.
+bio: I work across language model reasoning, efficient model systems, and trustworthy evaluation, connecting research ideas with practical engineering.
+email: berkcankapusuzoglu@gmail.com
+links:
+  publications: /publications.html
+  cv: /files/resume/Berkcan_Resume.pdf
+  scholar: https://scholar.google.com/citations?user=iv1vNTYAAAAJ&hl=en&oi=ao
+  github: https://github.com/berkcankapusuzoglu
+  linkedin: https://www.linkedin.com/in/berkcankapusuzoglu/
+themes:
+  - title: Reasoning and distillation
+    summary: Training methods that help language models identify and improve flawed reasoning.
+    link: /research/reasoning-and-distillation.html
+  - title: Efficient model systems
+    summary: Model design and adaptation methods that make capable systems more efficient to use.
+    link: /research/efficient-model-systems.html
+  - title: Trustworthy evaluation
+    summary: Evaluation and safeguards that make model behavior easier to assess and rely on.
+    link: /research/trustworthy-ml.html
+proof_points:
+  - label: Research
+    value: Language model reasoning, efficiency, and evaluation
+  - label: Approach
+    value: Paper-backed research connected to engineering practice
+  - label: Focus
+    value: Reliable systems built through careful measurement
+career:
+  - Vanderbilt University — Ph.D. in Mechanical Engineering
+  - University of Erlangen-Nuremberg — M.S. in Computational Engineering
+  - Delft University of Technology — M.S. in Applied Mathematics
+  - Bilkent University — B.S. in Mechanical Engineering

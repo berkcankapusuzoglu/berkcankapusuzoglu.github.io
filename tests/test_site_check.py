@@ -12,6 +12,7 @@ from scripts.site_check import (
     validate_html_document,
     _Document,
     _accessible_name,
+    _accessible_text,
 )
 
 
@@ -456,6 +457,46 @@ class GeneratedShellTests(unittest.TestCase):
                 self.assertTrue(_accessible_name(title, {}).strip())
                 self.assertEqual(len(og_titles), 1)
                 self.assertTrue((og_titles[0]['attrs'].get('content') or '').strip())
+
+    def test_homepage_has_research_leadership_positioning_and_public_links(self):
+        document = self.pages['index.html']
+        visible = self.visible(document)
+        headings = [node for node in visible if node['tag'] == 'h1']
+        self.assertEqual(len(headings), 1)
+        self.assertEqual(_accessible_name(headings[0], {}).casefold(),
+                         'I lead research and engineering for efficient, reliable language models.'.casefold())
+        title = next(node for node in document.nodes if node['tag'] == 'title')
+        self.assertEqual(_accessible_name(title, {}).casefold(), 'Staff Applied Researcher - AI Foundations'.casefold())
+        links = [node for node in visible if node['tag'] == 'a']
+        names = {_accessible_name(node, {}).casefold() for node in links}
+        self.assertTrue({name.casefold() for name in
+                         ('Publications', 'Google Scholar', 'GitHub', 'LinkedIn', 'Email')} <= names)
+        self.assertIn('Explore the research'.casefold(), names)
+        self.assertIn('Read the CV'.casefold(), names)
+        self.assertIn('Get in touch'.casefold(), names)
+
+    def test_homepage_has_three_focus_areas_and_ordered_featured_papers(self):
+        document = self.pages['index.html']
+        visible = self.visible(document)
+        focus = [node for node in visible if 'data-focus-area' in node['attrs']]
+        self.assertEqual(len(focus), 3)
+        cards = [node for node in visible if 'data-publication-card' in node['attrs']]
+        self.assertEqual(len(cards), 3)
+        headings = [_accessible_name(node, {}) for card in cards for node in card.get('children', [])
+                    if node['tag'] == 'h2']
+        self.assertEqual(headings, [
+            'Critique-Guided Distillation for Robust Reasoning via Refinement',
+            'When Load-Balancing Goes Too Far: Expert Pruning in Over-Dispersed Mixture-of-Experts Models',
+            'SPEAR-MM: Selective Parameter Evaluation and Restoration via Model Merging for Efficient Financial LLM Adaptation',
+        ])
+
+    def test_homepage_avoids_private_or_generic_positioning(self):
+        html = (self.public / 'index.html').read_text(encoding='utf-8').lower()
+        for phrase in ('personal page', 'cutting-edge', '2,048 gpus', '15b–120b', 'financial impact'):
+            self.assertNotIn(phrase, html)
+        visible_text = ' '.join(_accessible_text(node) for node in self.pages['index.html'].nodes)
+        self.assertNotRegex(visible_text, r'\b\d{5}(?:-\d{4})?\b')
+        self.assertNotIn('tel:', html)
 
 
 if __name__ == '__main__':

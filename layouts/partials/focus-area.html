@@ -1,0 +1,6 @@
+{{ $theme := .theme }}
+<article class="focus-card" data-focus-area>
+  <span class="focus-index" aria-hidden="true">0{{ add .index 1 }}</span>
+  <h3><a href="{{ $theme.link | relURL }}">{{ $theme.title }}</a></h3>
+  <p>{{ $theme.summary }}</p>
+</article>
