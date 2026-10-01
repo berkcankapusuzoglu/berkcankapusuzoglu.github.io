@@ -9,16 +9,21 @@ from urllib.parse import urljoin, urlparse
 
 
 PAGINATOR_REDIRECT_ROUTES = {
+    '/404/page/1.html',
     '/about/page/1.html',
     '/categories/page/1.html',
     '/gallery/page/1.html',
+    '/leadership/page/1.html',
     '/news/page/1.html',
     '/publication-type/2/page/1.html',
     '/publication_types/page/1.html',
     '/publications/page/1.html',
+    '/page/1.html',
+    '/research/page/1.html',
     '/tag/job/page/1.html',
     '/tag/personal/page/1.html',
     '/tags/page/1.html',
+    '/writing/page/1.html',
 }
 
 
@@ -29,7 +34,7 @@ def _is_known_paginator_redirect(document, route: str) -> bool:
     tags = [node['tag'] for node in nodes]
     if tags != ['html', 'head', 'title', 'link', 'meta', 'meta', 'meta']:
         return False
-    expected_path = route.removesuffix('page/1.html').rstrip('/') + '.html'
+    expected_path = '/' if route == '/page/1.html' else route.removesuffix('page/1.html').rstrip('/') + '.html'
     expected_url = f'https://berkcankapusuzoglu.github.io{expected_path}'
     title, canonical, robots, charset, refresh = nodes[2:]
     return (

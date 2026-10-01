@@ -20,12 +20,12 @@ themes:
     summary: Evaluation and safeguards that make model behavior easier to assess and rely on.
     link: /research/trustworthy-ml.html
 proof_points:
-  - label: Research
-    value: Language model reasoning, efficiency, and evaluation
-  - label: Approach
-    value: Paper-backed research connected to engineering practice
-  - label: Focus
-    value: Reliable systems built through careful measurement
+  - label: PMLR 306
+    value: Critique-Guided Distillation for Robust Reasoning via Refinement
+  - label: arXiv preprint
+    value: Expert pruning in over-dispersed mixture-of-experts models
+  - label: IEEE Big Data 2025
+    value: SPEAR-MM for efficient financial language model adaptation
 career:
   - Vanderbilt University - Ph.D. in Civil Engineering
   - University of Erlangen-Nuremberg — M.S. in Computational Engineering

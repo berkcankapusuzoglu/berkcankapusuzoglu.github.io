@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 import re
+import json
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -142,6 +143,22 @@ class SiteCheckTests(unittest.TestCase):
           </head></html>''', encoding='utf-8')
         self.assertEqual(validate_html_document(redirect, route), [])
 
+    def test_new_local_renderer_paginator_redirect_routes_are_recognized(self):
+        routes = ('/404/page/1.html', '/leadership/page/1.html', '/page/1.html',
+                  '/research/page/1.html', '/writing/page/1.html')
+        for route in routes:
+            target_path = '/' if route == '/page/1.html' else route.removesuffix(
+                'page/1.html').rstrip('/') + '.html'
+            target = f'https://berkcankapusuzoglu.github.io{target_path}'
+            redirect = self.root / route.lstrip('/')
+            redirect.parent.mkdir(parents=True, exist_ok=True)
+            redirect.write_text(f'''<!doctype html><html lang="en-us"><head><title>{target}</title>
+              <link rel="canonical" href="{target}"><meta name="robots" content="noindex">
+              <meta charset="utf-8"><meta http-equiv="refresh" content="0; url={target}">
+              </head></html>''', encoding='utf-8')
+            with self.subTest(route=route):
+                self.assertEqual(validate_html_document(redirect, route), [])
+
     def test_cli_reports_errors_and_fails(self):
         (self.root / 'index.html').write_text('<h1>A</h1>', encoding='utf-8')
         expected = self.root / 'urls.txt'
@@ -196,6 +213,11 @@ class GeneratedShellTests(unittest.TestCase):
                                 capture_output=True, text=True)
         if result.returncode:
             raise RuntimeError(result.stdout + result.stderr)
+        cls.all_pages = {}
+        for path in cls.public.rglob('*.html'):
+            document = _Document()
+            document.feed(path.read_text(encoding='utf-8'))
+            cls.all_pages[path.relative_to(cls.public).as_posix()] = document
         cls.pages = {}
         for route in ('index.html', 'publications.html',
                       'publications/2024_sarwar_neurips_efficient_natural_language_and_speech_processing_workshop.html',
@@ -271,6 +293,59 @@ class GeneratedShellTests(unittest.TestCase):
                     'https://berkcankapusuzoglu.github.io/'))
                 self.assertTrue(any(n['tag'] == 'meta' and n['attrs'].get('name') == 'description'
                                     and n['attrs'].get('content', '').strip() for n in document.nodes))
+
+    def test_indexed_pages_have_unique_titles_descriptions_and_open_graph_metadata(self):
+        titles = []
+        title_routes = {}
+        indexable = {}
+        for route, document in self.all_pages.items():
+            noindex = any(node['tag'] == 'meta' and node['attrs'].get('name') == 'robots' and
+                          'noindex' in node['attrs'].get('content', '').lower()
+                          for node in document.nodes)
+            if not noindex:
+                indexable[route] = document
+        for route, document in indexable.items():
+            with self.subTest(route=route):
+                title_node = next((node for node in document.nodes
+                                   if node['tag'] == 'title'), None)
+                title = _accessible_text(title_node).strip() if title_node else ''
+                titles.append(title)
+                title_routes.setdefault(title, []).append(route)
+                self.assertTrue(title)
+                descriptions = [node['attrs'].get('content', '').strip() for node in document.nodes
+                                if node['tag'] == 'meta' and node['attrs'].get('name') == 'description']
+                self.assertEqual(len(descriptions), 1)
+                self.assertGreaterEqual(len(descriptions[0]), 40)
+                self.assertNotIn('research and engineering for efficient, reliable language models',
+                                 descriptions[0].lower())
+                for prop in ('og:title', 'og:description'):
+                    self.assertEqual(sum(node['tag'] == 'meta' and
+                                     node['attrs'].get('property') == prop for node in document.nodes), 1)
+        self.assertEqual(len(titles), len(set(titles)),
+                         {title: routes for title, routes in title_routes.items() if len(routes) > 1})
+
+    def test_supported_json_ld_is_valid_and_complete(self):
+        for route, document in self.all_pages.items():
+            with self.subTest(route=route):
+                blocks = [node for node in document.nodes if node['tag'] == 'script' and
+                          node['attrs'].get('type') == 'application/ld+json']
+                decoded = [json.loads(''.join(child for child in node['children']
+                                               if isinstance(child, str))) for node in blocks]
+                types = [item.get('@type') for item in decoded]
+                self.assertLessEqual(types.count('Person'), 1)
+                self.assertLessEqual(types.count('ScholarlyArticle'), 1)
+                if route == 'index.html':
+                    self.assertEqual(types.count('Person'), 1)
+                    person = next(item for item in decoded if item.get('@type') == 'Person')
+                    self.assertIn('Berkcan', person.get('name', ''))
+                if (route.startswith('publications/') and '/page/' not in route and
+                        'data-publication-duplicate' not in str(document.nodes)):
+                    self.assertEqual(types.count('ScholarlyArticle'), 1)
+                    article = next(item for item in decoded if item.get('@type') == 'ScholarlyArticle')
+                    self.assertTrue(article.get('headline'))
+                    self.assertTrue(article.get('author'))
+                    self.assertTrue(article.get('datePublished'))
+                    self.assertTrue(article.get('url'))
 
     def test_linked_local_stylesheet_has_keyboard_visible_focus(self):
         for route, document in self.pages.items():
@@ -472,6 +547,9 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertTrue({name.casefold() for name in
                          ('Publications', 'Google Scholar', 'GitHub', 'LinkedIn', 'Email')} <= names)
         self.assertIn('Explore the research'.casefold(), names)
+        research_cta = next(node for node in links if _accessible_name(node, {}).strip() ==
+                            'Explore the research')
+        self.assertIn(research_cta['attrs'].get('href'), ('/research.html', './research.html'))
         self.assertIn('Read the CV'.casefold(), names)
         self.assertIn('Get in touch'.casefold(), names)
 
@@ -489,6 +567,17 @@ class GeneratedShellTests(unittest.TestCase):
             'When Load-Balancing Goes Too Far: Expert Pruning in Over-Dispersed Mixture-of-Experts Models',
             'SPEAR-MM: Selective Parameter Evaluation and Restoration via Model Merging for Efficient Financial LLM Adaptation',
         ])
+
+    def test_homepage_proof_strip_uses_verified_publication_facts(self):
+        text = ' '.join(_accessible_text(node) for node in self.visible(self.pages['index.html']))
+        self.assertIn('PMLR 306', text)
+        self.assertIn('arXiv preprint', text)
+        self.assertIn('IEEE Big Data 2025', text)
+        self.assertNotIn('Paper-backed research connected to engineering practice', text)
+
+    def test_about_page_states_doctoral_field(self):
+        about = (self.public / 'about.html').read_text(encoding='utf-8')
+        self.assertIn('Ph.D. in Civil Engineering', about)
 
     def test_homepage_reuses_portrait_with_accessible_alt_text(self):
         document = self.pages['index.html']

@@ -1,0 +1,4 @@
+{{- $profile := . -}}
+{{- $sameAs := slice $profile.links.scholar $profile.links.github $profile.links.linkedin -}}
+{{- $schema := dict "@context" "https://schema.org" "@type" "Person" "name" $profile.name "jobTitle" $profile.title "url" site.BaseURL "email" (printf "mailto:%s" $profile.email) "sameAs" $sameAs -}}
+<script type="application/ld+json">{{ $schema | jsonify | safeJS }}</script>

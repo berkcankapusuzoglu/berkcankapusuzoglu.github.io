@@ -1,0 +1,15 @@
+{{- $page := . -}}
+{{- $required := and $page.Title $page.Params.authors $page.Date $page.Params.venue.name $page.Params.status $page.Params.summary -}}
+{{- if $required -}}
+  {{- $authors := slice -}}
+  {{- range $page.Params.authors -}}
+    {{- $authors = $authors | append (dict "@type" "Person" "name" .) -}}
+  {{- end -}}
+  {{- $citations := slice -}}
+  {{- range $page.Params.links -}}
+    {{- with .url -}}{{- $citations = $citations | append . -}}{{- end -}}
+  {{- end -}}
+  {{- $schema := dict "@context" "https://schema.org" "@type" "ScholarlyArticle" "headline" $page.Title "author" $authors "datePublished" ($page.Date.Format "2006-01-02") "url" $page.Permalink "isPartOf" (dict "@type" "Periodical" "name" $page.Params.venue.name) "description" $page.Params.summary "additionalProperty" (dict "@type" "PropertyValue" "name" "Publication status" "value" $page.Params.status) -}}
+  {{- with $citations }}{{- $schema = merge $schema (dict "citation" .) -}}{{- end -}}
+  <script type="application/ld+json">{{ $schema | jsonify | safeJS }}</script>
+{{- end -}}
