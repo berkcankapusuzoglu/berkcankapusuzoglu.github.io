@@ -36,13 +36,10 @@
 /publications/page/1.html
 /publications/page/2.html
 /research.html
-/research/page/1.html
 /research/efficient-model-systems.html
 /research/reasoning-and-distillation.html
 /research/trustworthy-ml.html
 /leadership.html
-/leadership/page/1.html
 /tags.html
 /tags/page/1.html
 /writing.html
-/writing/page/1.html

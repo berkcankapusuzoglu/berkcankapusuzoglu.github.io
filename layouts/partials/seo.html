@@ -15,11 +15,15 @@
 {{- $title := printf "%s - Berkcan Kapusuzoglu" $pageTitle -}}
 {{- if $page.IsHome -}}{{- $title = "Staff Applied Researcher - AI Foundations" -}}{{- end -}}
 {{- if gt $pageNumber 1 -}}{{- $title = printf "%s (Page %d)" $title $pageNumber -}}{{- end -}}
+{{- $canonical := $page.Permalink -}}
+{{- if gt $pageNumber 1 -}}
+  {{- $canonical = printf "%s%s/page/%d.html" (strings.TrimSuffix "/" site.BaseURL) (strings.TrimSuffix ".html" $page.RelPermalink) $pageNumber -}}
+{{- end -}}
 <title>{{ $title | plainify }}</title>
 <meta name="description" content="{{ $description }}">
-<link rel="canonical" href="{{ $page.Permalink }}">
+<link rel="canonical" href="{{ $canonical }}">
 <meta property="og:title" content="{{ $title }}">
 <meta property="og:description" content="{{ $description }}">
-<meta property="og:url" content="{{ $page.Permalink }}">
+<meta property="og:url" content="{{ $canonical }}">
 {{- if $page.IsHome }}{{ partial "schema-person.html" site.Data.profile }}{{ end -}}
 {{- if and (eq $page.Section "publications") (not $page.Params.legacy_duplicate) -}}{{ partial "schema-publication.html" $page }}{{ end -}}

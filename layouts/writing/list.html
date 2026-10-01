@@ -1,9 +1,20 @@
+{{ define "head" }}
+  {{ $pageNumber := 1 }}
+  {{ if gt (len .RegularPages) 0 }}
+    {{ $paginator := .Paginate .RegularPages.ByDate.Reverse 10 }}
+    {{ $pageNumber = $paginator.PageNumber }}
+  {{ end }}
+  {{ .Store.Set "paginationPageNumber" $pageNumber }}
+  {{ partial "head.html" (dict "Page" . "PageNumber" $pageNumber) }}
+{{ end }}
 {{ define "main" }}
   <article class="page-content">
     <header class="page-heading"><p class="eyebrow">Writing</p><h1>{{ .Title }}</h1>{{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}</header>
-    {{ if .Pages }}
+    {{ if gt (len .RegularPages) 0 }}
+      {{ $paginator := .Paginate .RegularPages.ByDate.Reverse 10 }}
+      {{ .Store.Set "paginationPageNumber" $paginator.PageNumber }}
       <ul class="writing-list">
-        {{ range .Pages.ByDate.Reverse }}
+        {{ range $paginator.Pages }}
           <li>
             <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
             <p><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time></p>
@@ -11,6 +22,7 @@
           </li>
         {{ end }}
       </ul>
+      {{ template "_internal/pagination.html" . }}
     {{ else }}
       <div class="prose notes-empty-state">{{ .Content }}</div>
     {{ end }}

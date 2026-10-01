@@ -405,6 +405,56 @@ class GeneratedShellTests(unittest.TestCase):
             with self.subTest(route=route):
                 self.assertNotIn(route, routes)
 
+    def test_publication_listing_pages_use_only_unique_normalized_records(self):
+        listing_paths = [self.public / 'publications.html']
+        listing_paths.extend(sorted((self.public / 'publications' / 'page').glob('*.html')))
+        title_links = []
+
+        def descendants(node):
+            for child in node['children']:
+                if isinstance(child, dict):
+                    yield child
+                    yield from descendants(child)
+
+        for path in listing_paths:
+            document = _Document()
+            document.feed(path.read_text(encoding='utf-8'))
+            for card in (node for node in document.nodes if 'data-publication-card' in node['attrs']):
+                headings = [node for node in descendants(card) if node['tag'] == 'h2']
+                self.assertEqual(len(headings), 1, path)
+                title_link = next(node for node in descendants(headings[0]) if node['tag'] == 'a')
+                title_links.append((urljoin(f'https://berkcankapusuzoglu.github.io/{path.relative_to(self.public).as_posix()}',
+                                            title_link['attrs'].get('href', '')),
+                                    _accessible_name(title_link, {}).strip()))
+
+        self.assertTrue(title_links)
+        self.assertGreater(len(title_links), 10)
+        self.assertEqual(len(title_links), len(set(title_links)))
+        self.assertNotIn('/publications/2021_witherell_paul_witherell_berkcan_kapusuzoglu_matthew_sato_sankaran_mahadevan.html',
+                         [href for href, _ in title_links])
+        canonical_bond_record = 'https://berkcankapusuzoglu.github.io/publications/2020_kapusuzoglu_journal_of_manufacturing_science_and_engineering.html'
+        self.assertEqual(sum(href == canonical_bond_record for href, _ in title_links), 1)
+
+    def test_paginator_metadata_is_scoped_and_self_canonical(self):
+        repo = Path(__file__).parents[1]
+        for relative in ('layouts/_default/baseof.html', 'layouts/partials/head.html',
+                         'layouts/partials/seo.html'):
+            self.assertNotIn('.Paginator', (repo / relative).read_text(encoding='utf-8'))
+        for route in ('publications/page/2.html', 'publication-type/2/page/2.html'):
+            with self.subTest(route=route):
+                document = self.all_pages[route]
+                canonical = next(node['attrs'].get('href', '') for node in document.nodes
+                                 if node['tag'] == 'link' and
+                                 node['attrs'].get('rel') == 'canonical')
+                title = next(node for node in document.nodes if node['tag'] == 'title')
+                description = next(node['attrs'].get('content', '') for node in document.nodes
+                                   if node['tag'] == 'meta' and
+                                   node['attrs'].get('name') == 'description')
+                expected = f'https://berkcankapusuzoglu.github.io/{route}'
+                self.assertEqual(canonical, expected)
+                self.assertIn('Page 2', _accessible_text(title))
+                self.assertTrue(description.strip())
+
     def test_home_description_is_not_double_encoded(self):
         document = self.pages['index.html']
         description = next(node['attrs']['content'] for node in document.nodes
@@ -782,8 +832,8 @@ class GeneratedShellTests(unittest.TestCase):
     def test_writing_template_lists_pages_with_accessible_metadata(self):
         template = (Path(__file__).parents[1] / 'layouts/writing/list.html').read_text(
             encoding='utf-8')
-        self.assertRegex(template, r'if\s+\.Pages')
-        self.assertRegex(template, r'range\s+\.Pages')
+        self.assertRegex(template, r'if\s+gt\s+\(len\s+\.RegularPages\)\s+0')
+        self.assertRegex(template, r'range\s+\$paginator\.Pages')
         for expression in ('.RelPermalink', '.Title', '.Date', '.Summary'):
             with self.subTest(expression=expression):
                 self.assertIn(expression, template)
@@ -822,6 +872,45 @@ class GeneratedShellTests(unittest.TestCase):
                                 for node in document.nodes),
                             [(node['attrs'].get('href'), _accessible_name(node, {}))
                              for node in document.nodes if node['tag'] == 'a'])
+
+    def test_writing_pagination_lists_eleven_notes_exactly_once(self):
+        repo = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            writing = root / 'content' / 'writing'
+            writing.mkdir(parents=True)
+            (writing / '_index.md').write_text(
+                '---\ntitle: Research Notes\ndescription: A collection of research notes.\n---\n'
+                'No research notes have been published yet.\n', encoding='utf-8')
+            expected = {f'note-{index:02d}' for index in range(1, 12)}
+            for index in range(1, 12):
+                note = writing / f'note-{index:02d}'
+                note.mkdir()
+                (note / 'index.md').write_text(
+                    f'---\ntitle: Research Note {index:02d}\n'
+                    f'date: 2026-08-{index:02d}\ndescription: Summary for note {index:02d}.\n'
+                    f'---\nA useful summary for research note {index:02d}.\n',
+                    encoding='utf-8')
+            destination = root / 'public'
+            result = subprocess.run(
+                ['hugo', '--contentDir', str(root / 'content'), '--destination', str(destination),
+                 '--minify', '--panicOnWarning'], cwd=repo, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            page_paths = (destination / 'writing.html', destination / 'writing' / 'page' / '2.html')
+            self.assertTrue(all(path.is_file() for path in page_paths))
+            page_notes = []
+            for path in page_paths:
+                document = _Document()
+                document.feed(path.read_text(encoding='utf-8'))
+                self.assertNotIn('No research notes have been published yet',
+                                 ' '.join(_accessible_text(node) for node in document.nodes))
+                note_ids = [Path(urlparse(node['attrs'].get('href', '')).path).stem
+                            for node in document.nodes if node['tag'] == 'a' and
+                            '/writing/note-' in node['attrs'].get('href', '')]
+                page_notes.append(note_ids)
+            self.assertTrue(set(page_notes[0]).isdisjoint(page_notes[1]))
+            self.assertEqual(set(page_notes[0] + page_notes[1]), expected)
+            self.assertEqual(len(page_notes[0] + page_notes[1]), len(expected))
 
     def test_new_narrative_pages_avoid_confidential_claims(self):
         for route in ('research.html', 'research/reasoning-and-distillation.html',
