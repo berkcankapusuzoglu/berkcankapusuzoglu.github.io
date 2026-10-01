@@ -29,14 +29,15 @@ Primary sources are linked per-record in the source ledger. Key sources include 
 - Exact fresh route comparison — PASS: 47 actual routes, 47 expected routes, no missing or unexpected routes. This includes `/publication-type/2.html`, its page 1 and page 2 routes, and `/publications/page/2.html`.
 - Normal strict build and `python scripts/site_check.py --public public --expected tests/expected-urls.txt` — PASS.
 - Browser viewport recheck for this review follow-up — attempted, but unavailable: the computer-use browser inventory returned no browsers in the subagent session. The prior Task 3 report contains the earlier 360×800 and 1440×900 inspection; no new visual claim is made for the corrective commit.
-- `git diff --check` — PASS.
+- `git diff --check e66ec16ffe989410a772729714619f64fc3bdf66..HEAD` had not covered the final whitespace-only cleanup; the final staged range check from that base is recorded below.
 
 ## Self-review, deviations, and risks
 
 - The prior route result came from stale `public/`; this follow-up now guards against that with a fresh temporary destination and exact equality assertion.
 - Legacy route preservation uses original `publication_types: ["2"]` metadata and 10-item pagination. The duplicate Witherell route is retained as a canonical-record link and does not appear in the publication list.
 - Featured-order coverage reads the three production records' `featured` flags and explicit weights, sorts by those weights, and asserts the selector uses `Params.featured_weight`. The generated homepage-order assertion is owned by Task 4; the homepage was not changed here.
-- `git diff --check` — PASS; no whitespace errors.
+- Removed extra blank lines at EOF in `archetypes/publications.md`, `layouts/partials/featured-publications.html`, and `layouts/partials/publication-links.html` after review.
+- Full-range whitespace validation: `git diff --cached --check e66ec16ffe989410a772729714619f64fc3bdf66` — PASS on the staged final diff; no whitespace errors.
 - The browser viewport was reset after inspection. No production site or external service was changed.
 - Task 3 implementation commit SHA: `f242133514fdf3f7ef7154f8811160be3c4fd0ac` (`content: curate and expand publication record`).
 - Task 3 review-fix commit SHA: `71fab927d785d5d6f8c91317d2ba3185a8ac36a4` (`fix: preserve publication routes and content quality`).

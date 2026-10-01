@@ -1,3 +1,2 @@
 {{ $links := where .Params.links "url" "!=" "" }}
 {{ with $links }}<ul class="publication-links">{{ range . }}{{ if and .url .label }}<li><a data-paper-link href="{{ .url }}">{{ .label }}</a></li>{{ end }}{{ end }}</ul>{{ end }}
-
