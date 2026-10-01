@@ -39,4 +39,4 @@ Primary sources are linked per-record in the source ledger. Key sources include 
 - `git diff --check` — PASS; no whitespace errors.
 - The browser viewport was reset after inspection. No production site or external service was changed.
 - Task 3 implementation commit SHA: `f242133514fdf3f7ef7154f8811160be3c4fd0ac` (`content: curate and expand publication record`).
-- Task 3 review-fix commit SHA: pending.
+- Task 3 review-fix commit SHA: `71fab927d785d5d6f8c91317d2ba3185a8ac36a4` (`fix: preserve publication routes and content quality`).
