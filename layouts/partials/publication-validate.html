@@ -1,0 +1,8 @@
+{{ $page := . }}
+{{ range $field := slice "title" "date" "authors" "status" "summary" "contribution" }}
+  {{ if not (index $page.Params $field) }}{{ errorf "Publication %s missing required field %s" $page.File.Path $field }}{{ end }}
+{{ end }}
+{{ if not .Params.venue.name }}{{ errorf "Publication %s missing venue.name" .File.Path }}{{ end }}
+{{ if not .Params.venue.type }}{{ errorf "Publication %s missing venue.type" .File.Path }}{{ end }}
+{{ if not (in (slice "journal" "conference" "workshop" "proceedings" "preprint") .Params.venue.type) }}{{ errorf "Publication %s has invalid venue.type" .File.Path }}{{ end }}
+{{ if not (in (slice "published" "accepted" "preprint" "under review") .Params.status) }}{{ errorf "Publication %s has invalid status" .File.Path }}{{ end }}

@@ -31,6 +31,12 @@
 /publications/2022_kapusuzoglu_unknown_journal.html
 /publications/2023_kapusuzoglu_journal_of_computing_and_information_science_in_engineering.html
 /publications/2024_sarwar_neurips_efficient_natural_language_and_speech_processing_workshop.html
+/publications/2025-prompt-difficulty-prediction.html
+/publications/2025-spear-mm.html
+/publications/2026-critique-guided-distillation.html
+/publications/2026-load-balancing-expert-pruning.html
+/publications/2026-model-diversity-reasoning.html
+/publications/2026-structured-thoughts.html
 /publications/page/1.html
 /publications/page/2.html
 /tag/job.html

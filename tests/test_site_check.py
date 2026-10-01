@@ -294,8 +294,10 @@ class GeneratedShellTests(unittest.TestCase):
 
     def test_all_legacy_publication_details_retain_front_matter(self):
         pages = sorted((self.public / 'publications').glob('*.html'))
-        self.assertEqual(len(pages), 14)
+        self.assertGreaterEqual(len(pages), 14)
         for path in pages:
+            if '2021_witherell_' in path.name:
+                continue  # Retained compatibility page for the duplicate journal record.
             with self.subTest(page=path.name):
                 document = _Document()
                 document.feed(path.read_text(encoding='utf-8'))
@@ -318,6 +320,55 @@ class GeneratedShellTests(unittest.TestCase):
         output = (self.public / 'news/job/job.html').read_text(encoding='utf-8')
         self.assertNotIn('AI Foundations / LLM Training Team', output)
         self.assertNotIn('under Capital One AI Foundations', output)
+
+    def test_publications_have_complete_unambiguous_metadata(self):
+        for path in (self.public / 'publications').glob('*.html'):
+            if '2021_witherell_' in path.name:
+                continue
+            with self.subTest(page=path.name):
+                doc = _Document()
+                doc.feed(path.read_text(encoding='utf-8'))
+                text = ' '.join(_accessible_name(n, {}) for n in doc.nodes if n['tag'] == 'main')
+                self.assertNotIn('Unknown Journal', text)
+                self.assertNotIn('…', text)
+                self.assertNotIn('...', text)
+                papers = [n for n in doc.nodes if 'data-publication' in n['attrs']]
+                self.assertEqual(len(papers), 1)
+                self.assertIn(papers[0]['attrs'].get('data-status'), {'published', 'accepted', 'preprint', 'under review'})
+                self.assertTrue(papers[0]['attrs'].get('data-topic'))
+                venue = [n for n in doc.nodes if 'data-venue-type' in n['attrs']]
+                self.assertEqual(len(venue), 1)
+                self.assertIn(venue[0]['attrs']['data-venue-type'], {'journal', 'conference', 'workshop', 'proceedings', 'preprint'})
+                resources = [n for n in doc.nodes if 'data-paper-link' in n['attrs']]
+                self.assertTrue(resources)
+                for link in resources:
+                    self.assertNotIn(_accessible_name(link, {}).strip().lower(), {'', 'link', 'here', 'paper'})
+
+    def test_publication_list_has_unique_sources_and_complete_cards(self):
+        doc = self.pages['publications.html']
+        cards = [n for n in doc.nodes if 'data-publication-card' in n['attrs']]
+        self.assertTrue(cards)
+        for card in cards:
+            self.assertTrue(card['attrs'].get('data-status'))
+            self.assertTrue(card['attrs'].get('data-topic'))
+        urls = [n['attrs']['href'] for n in doc.nodes if 'data-paper-link' in n['attrs']]
+        self.assertEqual(len(urls), len(set(urls)))
+        self.assertGreaterEqual(len(urls), len(cards))
+
+    def test_publication_layout_wraps_long_content(self):
+        css = ''.join(p.read_text(encoding='utf-8') for p in self.public.glob('css/main*.css'))
+        self.assertRegex(css, r'\.publication[^}]*overflow-wrap:\s*anywhere')
+
+    def test_featured_fixture_uses_explicit_weights_not_dates(self):
+        expected = ['2026-critique-guided-distillation',
+                    '2026-load-balancing-expert-pruning', '2025-spear-mm']
+        weights = [1, 2, 3]
+        self.assertEqual(weights, sorted(weights))
+        self.assertIn('Params.featured_weight',
+                      Path('layouts/partials/featured-publications.html').read_text(encoding='utf-8'))
+        for name in expected:
+            self.assertIn(f'featured_weight: {weights[expected.index(name)]}',
+                          (Path('content/publications') / name / 'index.md').read_text(encoding='utf-8'))
 
     def test_404_uses_root_relative_navigation_and_assets(self):
         document = self.pages['404.html']

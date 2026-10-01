@@ -1,0 +1,15 @@
+{{ define "main" }}
+{{ if .Params.legacy_duplicate }}
+<section class="prose"><h1>{{ .Title }}</h1><p>This legacy entry duplicated the journal article. Its verified citation and research summary are maintained in one record.</p><p><a href="{{ .Params.canonical_record | relURL }}">Read the verified journal publication record</a></p></section>
+{{ else }}
+{{ partial "publication-validate.html" . }}
+<article class="publication-detail" data-publication data-status="{{ .Params.status }}" data-topic="{{ delimit .Params.topics " " }}">
+  <header class="page-heading"><p class="eyebrow">{{ .Params.venue.type | humanize }} · {{ .Params.status | humanize }} · <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006" }}</time></p><h1>{{ .Title }}</h1></header>
+  <p data-publication-authors>{{ delimit .Params.authors ", " }}</p>
+  <p data-publication-venue>{{ .Params.venue.name }} · <span data-venue-type="{{ .Params.venue.type }}">{{ .Params.venue.type | humanize }}</span></p>
+  <div class="prose"><h2>Summary</h2><p data-publication-abstract>{{ .Params.summary }}</p><h2>Research contribution</h2><p>{{ .Params.contribution }}</p>{{ .Content }}</div>
+  {{ partial "publication-links.html" . }}
+  <p><a href="{{ "publications.html" | relURL }}">All publications</a></p>
+</article>
+{{ end }}
+{{ end }}

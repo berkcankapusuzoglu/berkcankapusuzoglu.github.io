@@ -1,0 +1,2 @@
+{{ return (sort (where (where site.RegularPages "Section" "publications") "Params.featured" true) "Params.featured_weight" "asc") }}
+

@@ -34,6 +34,8 @@ h2, h3 { line-height: 1.2; }
 .eyebrow { margin: 0; color: var(--muted); font-size: .82rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .lede { max-width: 64ch; color: var(--muted); font-size: clamp(1.1rem, 2vw, 1.35rem); }
 .prose { max-width: 72ch; text-align: left; overflow-wrap: anywhere; }
+.publication-card, .publication-detail { min-width: 0; overflow-wrap: anywhere; word-break: normal; }
+.publication-card h2, .publication-detail h1, .publication-authors, .publication-links { overflow-wrap: anywhere; }
 .page-list { display: grid; max-width: 72ch; gap: 1rem; padding-left: 1.25rem; }
 .button-link { display: inline-block; padding: .7rem 1rem; border-radius: .35rem; color: white; background: var(--signal); font-weight: 700; text-decoration: none; }
 .site-footer { align-items: flex-start; border-top: 1px solid var(--line); border-bottom: 0; }

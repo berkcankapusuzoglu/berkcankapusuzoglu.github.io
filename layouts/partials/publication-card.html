@@ -1,0 +1,10 @@
+{{ partial "publication-validate.html" . }}
+{{ partial "publication-validate.html" . }}
+<article class="publication-card publication-detail" data-publication-card data-publication data-status="{{ .Params.status }}" data-topic="{{ delimit .Params.topics " " }}">
+  <p class="eyebrow">{{ .Date.Format "2006" }}{{ if .Params.featured }} · Featured research{{ end }}</p>
+  <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+  <p class="publication-authors" data-publication-authors>{{ delimit .Params.authors ", " }}</p>
+  <p data-publication-venue>{{ .Params.venue.name }} · <span data-venue-type="{{ .Params.venue.type }}">{{ .Params.venue.type | humanize }}</span> · {{ .Params.status | humanize }}</p>
+  <p data-publication-abstract>{{ .Params.summary }}</p>
+  {{ partial "publication-links.html" . }}
+</article>
