@@ -5,11 +5,17 @@
   {{- range $page.Params.authors -}}
     {{- $authors = $authors | append (dict "@type" "Person" "name" .) -}}
   {{- end -}}
-  {{- $citations := slice -}}
+  {{- $sameAs := slice -}}
   {{- range $page.Params.links -}}
-    {{- with .url -}}{{- $citations = $citations | append . -}}{{- end -}}
+    {{- with .url -}}{{- $sameAs = $sameAs | append . -}}{{- end -}}
   {{- end -}}
-  {{- $schema := dict "@context" "https://schema.org" "@type" "ScholarlyArticle" "headline" $page.Title "author" $authors "datePublished" ($page.Date.Format "2006-01-02") "url" $page.Permalink "isPartOf" (dict "@type" "Periodical" "name" $page.Params.venue.name) "description" $page.Params.summary "additionalProperty" (dict "@type" "PropertyValue" "name" "Publication status" "value" $page.Params.status) -}}
-  {{- with $citations }}{{- $schema = merge $schema (dict "citation" .) -}}{{- end -}}
+  {{- $schema := dict "@context" "https://schema.org" "@type" "ScholarlyArticle" "headline" $page.Title "author" $authors "datePublished" ($page.Date.Format "2006-01-02") "url" $page.Permalink "description" $page.Params.summary -}}
+  {{- with $sameAs }}{{- $schema = merge $schema (dict "sameAs" .) -}}{{- end -}}
+  {{- $venueType := lower $page.Params.venue.type -}}
+  {{- if eq $venueType "journal" -}}
+    {{- $schema = merge $schema (dict "isPartOf" (dict "@type" "Periodical" "name" $page.Params.venue.name)) -}}
+  {{- else if in (slice "conference" "workshop" "proceedings") $venueType -}}
+    {{- $schema = merge $schema (dict "isPartOf" (dict "@type" "CreativeWorkSeries" "name" $page.Params.venue.name)) -}}
+  {{- end -}}
   <script type="application/ld+json">{{ $schema | jsonify | safeJS }}</script>
 {{- end -}}

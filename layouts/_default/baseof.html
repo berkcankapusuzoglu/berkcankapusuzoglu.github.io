@@ -1,7 +1,11 @@
 <!doctype html>
 <html lang="{{ site.Language.LanguageCode | default "en" }}">
   {{ $rootPaths := eq .Title "404 Page not found" }}
-  <head>{{ partial "head.html" (dict "Page" . "RootPaths" $rootPaths) }}</head>
+  {{ $pageNumber := 1 }}
+  {{ if in (slice "section" "taxonomy" "term") .Kind }}
+    {{ with .Paginator }}{{ $pageNumber = .PageNumber }}{{ end }}
+  {{ end }}
+  <head>{{ partial "head.html" (dict "Page" . "RootPaths" $rootPaths "PageNumber" $pageNumber) }}</head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {{ partial "header.html" (dict "Page" . "RootPaths" $rootPaths) }}

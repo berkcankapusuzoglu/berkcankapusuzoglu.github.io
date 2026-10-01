@@ -60,7 +60,7 @@ The required fields are `title`, `date`, `authors`, `venue.name`, `venue.type`, 
 
 ### Publish a Research Note
 
-Create `content/writing/<short-name>.md` with a title, date, description, and the note text. Keep it focused on a research question, an engineering lesson, or a useful reading note. Link to the supporting publication or source. After publishing, adapt the note's main point and one takeaway into a LinkedIn post, then link back to the full note. Do not publish confidential work details or unapproved metrics.
+Create `content/writing/<slug>/index.md` with a title, date, description, and the note text. Hugo lists these page bundles on the Research Notes page, newest first, with each title, date, and summary linked accessibly. Keep a note focused on a research question, an engineering lesson, or a useful reading note, and link to its supporting publication or source. After publishing, adapt the note's main point and one takeaway into a LinkedIn post, then link back to the full note. Do not publish confidential work details or unapproved metrics.
 
 ### Replace the CV
 

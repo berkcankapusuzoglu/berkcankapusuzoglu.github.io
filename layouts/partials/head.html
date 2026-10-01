@@ -1,5 +1,5 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-{{ partial "seo.html" .Page }}
+{{ partial "seo.html" . }}
 {{ $style := resources.Get "css/main.css" | minify | fingerprint }}
 <link rel="stylesheet" href="{{ if .RootPaths }}{{ $style.Permalink }}{{ else }}{{ $style.RelPermalink }}{{ end }}">

@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import re
 import json
+import html
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -144,11 +145,10 @@ class SiteCheckTests(unittest.TestCase):
         self.assertEqual(validate_html_document(redirect, route), [])
 
     def test_new_local_renderer_paginator_redirect_routes_are_recognized(self):
-        routes = ('/404/page/1.html', '/leadership/page/1.html', '/page/1.html',
-                  '/research/page/1.html', '/writing/page/1.html')
+        routes = ('/leadership/page/1.html', '/research/page/1.html',
+                  '/writing/page/1.html')
         for route in routes:
-            target_path = '/' if route == '/page/1.html' else route.removesuffix(
-                'page/1.html').rstrip('/') + '.html'
+            target_path = route.removesuffix('page/1.html').rstrip('/') + '.html'
             target = f'https://berkcankapusuzoglu.github.io{target_path}'
             redirect = self.root / route.lstrip('/')
             redirect.parent.mkdir(parents=True, exist_ok=True)
@@ -360,6 +360,66 @@ class GeneratedShellTests(unittest.TestCase):
                     self.assertTrue(article.get('author'))
                     self.assertTrue(article.get('datePublished'))
                     self.assertTrue(article.get('url'))
+
+    def test_scholarly_article_schema_uses_applicable_relationships(self):
+        cases = {
+            '2026-critique-guided-distillation.html': {
+                'sameAs': ['https://proceedings.mlr.press/v306/kapusuzoglu26a.html'],
+                'part_type': 'CreativeWorkSeries',
+                'part_name': 'Proceedings of the 43rd International Conference on Machine Learning, PMLR 306',
+            },
+            '2026-load-balancing-expert-pruning.html': {
+                'sameAs': ['https://arxiv.org/abs/2609.04453'],
+                'part_type': None,
+                'part_name': None,
+            },
+            '2020_kapusuzoglu_jom.html': {
+                'sameAs': ['https://link.springer.com/article/10.1007/s11837-020-04438-4'],
+                'part_type': 'Periodical',
+                'part_name': 'Journal of Metals',
+            },
+        }
+        for route, expected in cases.items():
+            with self.subTest(route=route):
+                document = self.all_pages[f'publications/{route}']
+                block = next(node for node in document.nodes if node['tag'] == 'script' and
+                             node['attrs'].get('type') == 'application/ld+json')
+                schema = json.loads(''.join(child for child in block['children']
+                                            if isinstance(child, str)))
+                visible_text = ' '.join(_accessible_text(node) for node in self.visible(document))
+                self.assertEqual(schema.get('sameAs'), expected['sameAs'])
+                self.assertNotIn('additionalProperty', schema)
+                self.assertNotIn('citation', schema)
+                self.assertNotIn('status', schema)
+                self.assertIn('preprint' if route.startswith('2026-load') else 'published',
+                              visible_text.lower())
+                if expected['part_type']:
+                    self.assertEqual(schema['isPartOf'], {
+                        '@type': expected['part_type'], 'name': expected['part_name']})
+                else:
+                    self.assertNotIn('isPartOf', schema)
+
+    def test_global_paginator_does_not_create_duplicated_document_routes(self):
+        routes = collect_html_routes(self.public)
+        for route in ('/page/2.html', '/page/3.html', '/404/page/2.html', '/404/page/3.html'):
+            with self.subTest(route=route):
+                self.assertNotIn(route, routes)
+
+    def test_home_description_is_not_double_encoded(self):
+        document = self.pages['index.html']
+        description = next(node['attrs']['content'] for node in document.nodes
+                           if node['tag'] == 'meta' and node['attrs'].get('name') == 'description')
+        og_description = next(node['attrs']['content'] for node in document.nodes
+                              if node['tag'] == 'meta' and
+                              node['attrs'].get('property') == 'og:description')
+        for value in (description, og_description):
+            with self.subTest(value=value):
+                self.assertIn("Kapusuzoglu's", html.unescape(value))
+                self.assertNotIn('&amp;#39;', value)
+        template = (Path(__file__).parents[1] / 'layouts/partials/seo.html').read_text(
+            encoding='utf-8')
+        self.assertNotIn('| htmlEscape', template)
+        self.assertNotIn('.Paginator', template)
 
     def test_linked_local_stylesheet_has_keyboard_visible_focus(self):
         for route, document in self.pages.items():
@@ -719,6 +779,50 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertTrue(any('/research/efficient-model-systems.html' in href for href in hrefs))
         self.assertTrue(any('/research/trustworthy-ml.html' in href for href in hrefs))
 
+    def test_writing_template_lists_pages_with_accessible_metadata(self):
+        template = (Path(__file__).parents[1] / 'layouts/writing/list.html').read_text(
+            encoding='utf-8')
+        self.assertRegex(template, r'if\s+\.Pages')
+        self.assertRegex(template, r'range\s+\.Pages')
+        for expression in ('.RelPermalink', '.Title', '.Date', '.Summary'):
+            with self.subTest(expression=expression):
+                self.assertIn(expression, template)
+        self.assertIn('notes-empty-state', template)
+
+    def test_writing_page_lists_a_real_note_bundle(self):
+        repo = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            writing = root / 'content' / 'writing'
+            note = writing / 'a-test-note'
+            note.mkdir(parents=True)
+            (writing / '_index.md').write_text(
+                '---\ntitle: Research Notes\ndescription: Notes about research and engineering.\n---\n'
+                'No research notes have been published yet.\n', encoding='utf-8')
+            (note / 'index.md').write_text(
+                '---\ntitle: A Test Note\ndate: 2026-09-30\n'
+                'description: A practical research note.\n---\n'
+                'A short test note summary that should appear in the generated listing.\n',
+                encoding='utf-8')
+            destination = root / 'public'
+            result = subprocess.run(
+                ['hugo', '--contentDir', str(root / 'content'), '--destination', str(destination),
+                 '--minify', '--panicOnWarning'], cwd=repo, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            document = _Document()
+            document.feed((destination / 'writing.html').read_text(encoding='utf-8'))
+            text = ' '.join(_accessible_text(node) for node in self.visible(document))
+            self.assertIn('A Test Note', text)
+            self.assertIn('September 30, 2026', text)
+            self.assertIn('A short test note summary', text)
+            self.assertNotIn('No research notes have been published yet', text)
+            self.assertTrue(any(node['tag'] == 'a' and
+                                node['attrs'].get('href') == './writing/a-test-note.html' and
+                                _accessible_name(node, {}).strip() == 'A Test Note'
+                                for node in document.nodes),
+                            [(node['attrs'].get('href'), _accessible_name(node, {}))
+                             for node in document.nodes if node['tag'] == 'a'])
+
     def test_new_narrative_pages_avoid_confidential_claims(self):
         for route in ('research.html', 'research/reasoning-and-distillation.html',
                       'research/efficient-model-systems.html', 'research/trustworthy-ml.html',
@@ -741,7 +845,7 @@ class GeneratedShellTests(unittest.TestCase):
         document = _Document()
         document.feed((self.public / 'writing.html').read_text(encoding='utf-8'))
         text = ' '.join(_accessible_text(node) for node in self.visible(document)).casefold()
-        self.assertIn('publishable articles and ideas', text)
+        self.assertIn('publishable notes', text)
         self.assertIn('linkedin', text)
 
 

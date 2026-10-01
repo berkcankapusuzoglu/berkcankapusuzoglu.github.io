@@ -1,4 +1,5 @@
-{{- $page := . -}}
+{{- $page := .Page -}}
+{{- $pageNumber := .PageNumber | default 1 -}}
 {{- $description := $page.Description | default $page.Summary | plainify | htmlUnescape | strings.TrimSpace -}}
 {{- if $page.IsHome -}}
   {{- $description = "Berkcan Kapusuzoglu's research covers reasoning methods, efficient model systems, and trustworthy language model evaluation." -}}
@@ -13,16 +14,12 @@
 {{- if not $pageTitle -}}{{- $pageTitle = path.Base $page.RelPermalink | strings.TrimSuffix ".html" | humanize -}}{{- end -}}
 {{- $title := printf "%s - Berkcan Kapusuzoglu" $pageTitle -}}
 {{- if $page.IsHome -}}{{- $title = "Staff Applied Researcher - AI Foundations" -}}{{- end -}}
-{{- if $page.IsNode -}}
-  {{- with $page.Paginator -}}
-    {{- if gt .PageNumber 1 -}}{{- $title = printf "%s (Page %d)" $title .PageNumber -}}{{- end -}}
-  {{- end -}}
-{{- end -}}
+{{- if gt $pageNumber 1 -}}{{- $title = printf "%s (Page %d)" $title $pageNumber -}}{{- end -}}
 <title>{{ $title | plainify }}</title>
-<meta name="description" content="{{ $description | htmlEscape }}">
+<meta name="description" content="{{ $description }}">
 <link rel="canonical" href="{{ $page.Permalink }}">
-<meta property="og:title" content="{{ $title | htmlEscape }}">
-<meta property="og:description" content="{{ $description | htmlEscape }}">
+<meta property="og:title" content="{{ $title }}">
+<meta property="og:description" content="{{ $description }}">
 <meta property="og:url" content="{{ $page.Permalink }}">
 {{- if $page.IsHome }}{{ partial "schema-person.html" site.Data.profile }}{{ end -}}
 {{- if and (eq $page.Section "publications") (not $page.Params.legacy_duplicate) -}}{{ partial "schema-publication.html" $page }}{{ end -}}

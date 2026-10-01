@@ -53,3 +53,23 @@ Pa11y emitted a dependency deprecation warning but no accessibility errors. No d
 ## Self-review
 
 The generated route fixture and redirects explicitly encode the intentional public URL decisions; normalized publications and their sources are unchanged. Legacy directory deletion remains outstanding and must not be described as complete. Task 7 is a safe isolation/documentation step only.
+
+## Review remediation
+
+The combined review found four issues after the Task 7 commit. They are addressed in a focused follow-up commit, `fix: correct metadata and research notes publishing` (exact commit SHA is in the final handoff).
+
+- ScholarlyArticle JSON-LD now uses `sameAs` for DOI/proceedings/arXiv resource URLs. Status remains visible in publication HTML and is omitted from schema. `isPartOf` is a `Periodical` for journals, a `CreativeWorkSeries` for proceedings, and absent for arXiv preprints. Generated JSON-LD contract tests cover CGD, expert-pruning preprint, and a journal.
+- The SEO partial no longer reads `.Paginator` or manually applies `htmlEscape`. Pagination metadata is passed only for section/taxonomy/term contexts from the base layout. Accidental root and 404 page-2/page-3 duplicates are absent; route tests assert that. The exact generated HTML route fixture contains 48 routes, including only intentional list pagination outputs.
+- Research Notes now lists child page bundles with linked title, date, and summary; the empty-state content appears only when no notes exist. A Hugo fixture test adds a temporary note bundle and verifies its generated output without creating a public post. README instructions now use `content/writing/<slug>/index.md`.
+- Home metadata relies on Go template contextual escaping. Generated metadata tests decode the attribute and verify the apostrophe is correct.
+
+Final remediation gate:
+
+- `python -m unittest discover -s tests -p "test_*.py" -v` — PASS, 71 tests.
+- Clean `hugo --minify --panicOnWarning --printPathWarnings --destination public` — PASS, 46 pages, 2 paginator pages, 13 static files, 9 aliases; 48 generated HTML routes.
+- `python scripts/site_check.py --public public --expected tests/expected-urls.txt` — PASS, exact route contract.
+- `npm ci` — PASS using the lockfile; `npm audit` — PASS, 0 vulnerabilities.
+- `npm run check:a11y` — PASS, 16/16 desktop/mobile URL checks, 0 errors.
+- `node --check scripts/check_a11y.mjs` and `git diff --check` — PASS.
+
+The first npm install attempt was denied network access and exited with an npm internal error; after network permission was granted, the pinned install and all Node checks passed. Pa11y emitted only the dependency deprecation warning. Legacy physical cleanup remains blocked as documented above.

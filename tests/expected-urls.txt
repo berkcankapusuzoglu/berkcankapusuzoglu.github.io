@@ -1,7 +1,4 @@
 /
-/404/page/1.html
-/404/page/2.html
-/404/page/3.html
 /404.html
 /about.html
 /about/page/1.html
@@ -47,8 +44,5 @@
 /leadership/page/1.html
 /tags.html
 /tags/page/1.html
-/page/1.html
-/page/2.html
-/page/3.html
 /writing.html
 /writing/page/1.html

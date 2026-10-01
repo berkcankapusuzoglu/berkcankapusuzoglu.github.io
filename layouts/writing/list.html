@@ -1,6 +1,18 @@
 {{ define "main" }}
-  <article class="page-content notes-empty-state">
+  <article class="page-content">
     <header class="page-heading"><p class="eyebrow">Writing</p><h1>{{ .Title }}</h1>{{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}</header>
-    <div class="prose">{{ .Content }}</div>
+    {{ if .Pages }}
+      <ul class="writing-list">
+        {{ range .Pages.ByDate.Reverse }}
+          <li>
+            <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
+            <p><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time></p>
+            <p>{{ .Summary }}</p>
+          </li>
+        {{ end }}
+      </ul>
+    {{ else }}
+      <div class="prose notes-empty-state">{{ .Content }}</div>
+    {{ end }}
   </article>
 {{ end }}
