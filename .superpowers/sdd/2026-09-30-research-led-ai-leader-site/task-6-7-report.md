@@ -73,3 +73,20 @@ Final remediation gate:
 - `node --check scripts/check_a11y.mjs` and `git diff --check` — PASS.
 
 The first npm install attempt was denied network access and exited with an npm internal error; after network permission was granted, the pinned install and all Node checks passed. Pa11y emitted only the dependency deprecation warning. Legacy physical cleanup remains blocked as documented above.
+
+## Pagination remediation
+
+Commit: `d4ff17f6480c3eeb3de906f58e66678ab79da37e` (`fix: scope list pagination to filtered content`).
+
+Paginator setup now belongs to each list template. Publications paginate only their filtered, non-legacy records and render only the paginator's pages. Research Notes paginate their sorted regular pages and render only those pages; an empty collection shows the empty state without generating a page-1 duplicate. The base layout and SEO partials no longer access `.Paginator`. Page-specific titles, descriptions, canonical URLs, and Open Graph URLs remain unique on intentional paginator pages. Tests scan every generated publication list page for duplicate or legacy routes, and a temporary eleven-note fixture confirms exactly-once pagination across two list pages.
+
+Final pagination verification:
+
+- `python -m unittest discover -s tests -p "test_*.py" -v` — PASS, 74 tests.
+- Clean `hugo --minify --panicOnWarning --printPathWarnings --destination public` — PASS, 46 pages, 2 paginator pages, 13 static files, 6 aliases; 45 generated HTML routes.
+- `python scripts/site_check.py --public public --expected tests/expected-urls.txt` — PASS, exact 45-route contract. Incidental page-1 routes for Research, Leadership, and empty Research Notes were removed from the contract.
+- `npm ci` — PASS; `npm audit` — PASS, 0 vulnerabilities.
+- `npm run check:a11y` — PASS, 16/16 desktop/mobile checks, 0 Pa11y errors.
+- `node --check scripts/check_a11y.mjs` and `git diff --check` — PASS.
+
+Pa11y emitted the existing dependency deprecation warning. The Chrome executable was selected from the local installation for this run; the repository configuration was unchanged.
