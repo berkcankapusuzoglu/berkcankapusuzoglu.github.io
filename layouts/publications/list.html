@@ -3,8 +3,7 @@
   <header class="page-heading"><p class="eyebrow">Research record</p><h1>{{ .Title }}</h1><p class="lede">Peer-reviewed research and preprints, with explicit venue and publication status.</p></header>
   {{ .Content }}
   {{ $papers := where .RegularPages "Params.legacy_duplicate" "ne" true }}
-  {{ $ordered := sort $papers "Params.featured_weight" "asc" }}
-  {{ $paginator := .Paginate ($ordered.ByDate.Reverse) 100 }}
+  {{ $paginator := .Paginate ($papers.ByDate.Reverse) 10 }}
   {{ range $paginator.Pages }}{{ partial "publication-card.html" . }}{{ end }}
   {{ template "_internal/pagination.html" . }}
 </section>

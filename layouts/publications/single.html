@@ -1,6 +1,6 @@
 {{ define "main" }}
 {{ if .Params.legacy_duplicate }}
-<section class="prose"><h1>{{ .Title }}</h1><p>This legacy entry duplicated the journal article. Its verified citation and research summary are maintained in one record.</p><p><a href="{{ .Params.canonical_record | relURL }}">Read the verified journal publication record</a></p></section>
+<article data-publication-duplicate data-canonical-record="{{ .Params.canonical_record }}" class="prose"><h1>{{ .Title }}</h1><p>This legacy route is retained for compatibility and refers to the canonical publication record.</p><p><a href="{{ .Params.canonical_record | relURL }}">Read the canonical journal publication record</a></p></article>
 {{ else }}
 {{ partial "publication-validate.html" . }}
 <article class="publication-detail" data-publication data-status="{{ .Params.status }}" data-topic="{{ delimit .Params.topics " " }}">

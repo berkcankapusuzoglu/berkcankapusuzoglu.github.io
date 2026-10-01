@@ -2,6 +2,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import re
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -197,6 +198,7 @@ class GeneratedShellTests(unittest.TestCase):
         cls.pages = {}
         for route in ('index.html', 'publications.html',
                       'publications/2024_sarwar_neurips_efficient_natural_language_and_speech_processing_workshop.html',
+                      'publications/2021_witherell_paul_witherell_berkcan_kapusuzoglu_matthew_sato_sankaran_mahadevan.html',
                       '404.html', 'admin.html', 'gallery/methods.html',
                       'news/job/job.html'):
             document = _Document()
@@ -212,6 +214,11 @@ class GeneratedShellTests(unittest.TestCase):
                 headings = [n for n in self.visible(document) if n['tag'] == 'h1']
                 self.assertEqual(len(headings), 1)
                 self.assertTrue(_accessible_name(headings[0], {}).strip())
+
+    def test_fresh_build_matches_complete_expected_route_contract(self):
+        expected = {line.strip() for line in Path('tests/expected-urls.txt').read_text(
+            encoding='utf-8').splitlines() if line.strip()}
+        self.assertEqual(collect_html_routes(self.public), expected)
 
     def test_skip_link_targets_visible_main_content(self):
         for route, document in self.pages.items():
@@ -296,11 +303,14 @@ class GeneratedShellTests(unittest.TestCase):
         pages = sorted((self.public / 'publications').glob('*.html'))
         self.assertGreaterEqual(len(pages), 14)
         for path in pages:
-            if '2021_witherell_' in path.name:
-                continue  # Retained compatibility page for the duplicate journal record.
             with self.subTest(page=path.name):
                 document = _Document()
                 document.feed(path.read_text(encoding='utf-8'))
+                if any('data-publication-duplicate' in node['attrs'] for node in document.nodes):
+                    self.assertTrue(any(node['attrs'].get('data-canonical-record') ==
+                                        '/publications/2020_kapusuzoglu_journal_of_manufacturing_science_and_engineering.html'
+                                        for node in document.nodes))
+                    continue
                 self.assertTrue(any('data-publication-abstract' in node['attrs'] and
                                     _accessible_name(node, {}).strip() for node in document.nodes))
                 self.assertTrue(any('data-publication-authors' in node['attrs'] and
@@ -323,11 +333,11 @@ class GeneratedShellTests(unittest.TestCase):
 
     def test_publications_have_complete_unambiguous_metadata(self):
         for path in (self.public / 'publications').glob('*.html'):
-            if '2021_witherell_' in path.name:
-                continue
             with self.subTest(page=path.name):
                 doc = _Document()
                 doc.feed(path.read_text(encoding='utf-8'))
+                if any('data-publication-duplicate' in node['attrs'] for node in doc.nodes):
+                    continue
                 text = ' '.join(_accessible_name(n, {}) for n in doc.nodes if n['tag'] == 'main')
                 self.assertNotIn('Unknown Journal', text)
                 self.assertNotIn('…', text)
@@ -343,6 +353,46 @@ class GeneratedShellTests(unittest.TestCase):
                 self.assertTrue(resources)
                 for link in resources:
                     self.assertNotIn(_accessible_name(link, {}).strip().lower(), {'', 'link', 'here', 'paper'})
+
+    def test_duplicate_legacy_record_points_to_canonical_and_is_not_listed(self):
+        duplicate_path = (self.public / 'publications' /
+                          '2021_witherell_paul_witherell_berkcan_kapusuzoglu_matthew_sato_sankaran_mahadevan.html')
+        duplicate = _Document()
+        duplicate.feed(duplicate_path.read_text(encoding='utf-8'))
+        self.assertTrue(any('data-publication-duplicate' in n['attrs'] for n in duplicate.nodes))
+        self.assertTrue(any(n['attrs'].get('data-canonical-record') ==
+                            '/publications/2020_kapusuzoglu_journal_of_manufacturing_science_and_engineering.html'
+                            for n in duplicate.nodes))
+        self.assertTrue(any(n['tag'] == 'a' and n['attrs'].get('href', '').endswith(
+                            '2020_kapusuzoglu_journal_of_manufacturing_science_and_engineering.html')
+                            for n in duplicate.nodes))
+        listing = _Document()
+        listing.feed((self.public / 'publications.html').read_text(encoding='utf-8'))
+        self.assertFalse(any(n['attrs'].get('href', '').endswith(
+            '2021_witherell_paul_witherell_berkcan_kapusuzoglu_matthew_sato_sankaran_mahadevan.html')
+            for n in listing.nodes))
+        canonical = (Path('content/publications') /
+                     '2020_Kapusuzoglu_Journal_of_Manufacturing_Science_and_Engineering' / 'index.md').read_text(encoding='utf-8')
+        legacy = (Path('content/publications') /
+                  '2021_Witherell_Paul_Witherell_Berkcan_Kapusuzoglu_Matthew_Sato_Sankaran_Mahadevan' / 'index.md').read_text(encoding='utf-8')
+        self.assertIn('legacy_duplicate: true', legacy)
+        self.assertIn('canonical_record:', legacy)
+        self.assertIn('authors: ["Berkcan Kapusuzoglu", "Matthew Sato", "Sankaran Mahadevan", "Paul Witherell"]', canonical)
+        self.assertIn('authors: ["Berkcan Kapusuzoglu", "Matthew Sato", "Sankaran Mahadevan", "Paul Witherell"]', legacy)
+        self.assertIn('url: "https://asmedigitalcollection.asme.org/manufacturingscience/article-abstract/143/2/021007/1086236"', legacy)
+        self.assertIn('date: 2020-01-01', legacy)
+
+    def test_summaries_and_contributions_end_on_complete_phrases(self):
+        dangling = re.compile(r'\b(?:the|of|in|to|and|or|but|for|with|at|from|by|over|within|through|using|that|which|as|including|based on|such as)$', re.I)
+        for path in Path('content/publications').glob('*/index.md'):
+            source = path.read_text(encoding='utf-8')
+            for field in ('summary', 'contribution'):
+                match = re.search(rf'^{field}:\s*"(.*)"\s*$', source, re.M)
+                self.assertIsNotNone(match, f'{path}: missing {field}')
+                value = match.group(1)
+                self.assertNotRegex(value, r'(?:…|\.\.\.)')
+                self.assertRegex(value, r'[.!?]$', f'{path}: incomplete {field}')
+                self.assertFalse(dangling.search(value), f'{path}: incomplete {field} ending: {value[-40:]}')
 
     def test_publication_list_has_unique_sources_and_complete_cards(self):
         doc = self.pages['publications.html']
@@ -362,13 +412,17 @@ class GeneratedShellTests(unittest.TestCase):
     def test_featured_fixture_uses_explicit_weights_not_dates(self):
         expected = ['2026-critique-guided-distillation',
                     '2026-load-balancing-expert-pruning', '2025-spear-mm']
-        weights = [1, 2, 3]
-        self.assertEqual(weights, sorted(weights))
-        self.assertIn('Params.featured_weight',
-                      Path('layouts/partials/featured-publications.html').read_text(encoding='utf-8'))
+        selector = Path('layouts/partials/featured-publications.html').read_text(encoding='utf-8')
+        self.assertIn('"Params.featured" true', selector)
+        self.assertIn('"Params.featured_weight" "asc"', selector)
+        selected = []
         for name in expected:
-            self.assertIn(f'featured_weight: {weights[expected.index(name)]}',
-                          (Path('content/publications') / name / 'index.md').read_text(encoding='utf-8'))
+            source = (Path('content/publications') / name / 'index.md').read_text(encoding='utf-8')
+            self.assertIn('\nfeatured: true\n', source, msg=name)
+            weight = re.search(r'^featured_weight:\s*(\d+)$', source, re.M)
+            self.assertIsNotNone(weight, name)
+            selected.append((int(weight.group(1)), name))
+        self.assertEqual([name for _, name in sorted(selected)], expected)
 
     def test_404_uses_root_relative_navigation_and_assets(self):
         document = self.pages['404.html']
