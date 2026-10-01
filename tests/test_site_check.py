@@ -132,9 +132,9 @@ class SiteCheckTests(unittest.TestCase):
         self.assertIn('Expected exactly one H1; found 0', errors)
 
     def test_exact_hugo_paginator_redirect_shape_is_accepted(self):
-        route = '/publications/page/1.html'
-        target = 'https://berkcankapusuzoglu.github.io/publications.html'
-        redirect = (self.root / 'publications/page/1.html')
+        route = '/about/page/1.html'
+        target = 'https://berkcankapusuzoglu.github.io/about.html'
+        redirect = (self.root / 'about/page/1.html')
         redirect.parent.mkdir(parents=True)
         redirect.write_text(f'''<!doctype html><html lang="en-us"><head><title>{target}</title>
           <link rel="canonical" href="{target}"><meta name="robots" content="noindex">
@@ -490,6 +490,15 @@ class GeneratedShellTests(unittest.TestCase):
             'SPEAR-MM: Selective Parameter Evaluation and Restoration via Model Merging for Efficient Financial LLM Adaptation',
         ])
 
+    def test_homepage_reuses_portrait_with_accessible_alt_text(self):
+        document = self.pages['index.html']
+        portraits = [node for node in document.nodes if node['tag'] == 'img' and
+                     'avatar.jpg' in node['attrs'].get('src', '')]
+        self.assertEqual(len(portraits), 1)
+        self.assertEqual(portraits[0]['attrs'].get('alt'), 'Portrait of Berkcan Kapusuzoglu')
+        h1 = next(node for node in document.nodes if node['tag'] == 'h1')
+        self.assertLess(document.nodes.index(h1), document.nodes.index(portraits[0]))
+
     def test_homepage_avoids_private_or_generic_positioning(self):
         html = (self.public / 'index.html').read_text(encoding='utf-8').lower()
         for phrase in ('personal page', 'cutting-edge', '2,048 gpus', '15b–120b', 'financial impact'):
@@ -497,6 +506,87 @@ class GeneratedShellTests(unittest.TestCase):
         visible_text = ' '.join(_accessible_text(node) for node in self.pages['index.html'].nodes)
         self.assertNotRegex(visible_text, r'\b\d{5}(?:-\d{4})?\b')
         self.assertNotIn('tel:', html)
+
+    def test_research_leadership_about_and_notes_routes_have_unique_metadata(self):
+        metadata = []
+        for route in ('research.html', 'research/reasoning-and-distillation.html',
+                      'research/efficient-model-systems.html', 'research/trustworthy-ml.html',
+                      'leadership.html', 'about.html', 'writing.html'):
+            path = self.public / route
+            self.assertTrue(path.exists(), f'missing generated route: /{route}')
+            document = _Document()
+            document.feed(path.read_text(encoding='utf-8'))
+            headings = [node for node in self.visible(document) if node['tag'] == 'h1']
+            self.assertEqual(len(headings), 1, route)
+            title = next(node for node in document.nodes if node['tag'] == 'title')
+            description = next(node for node in document.nodes if node['tag'] == 'meta' and
+                               node['attrs'].get('name') == 'description')
+            metadata.append((_accessible_text(title), description['attrs'].get('content', '')))
+            self.assertTrue(metadata[-1][0].strip(), route)
+            self.assertTrue(metadata[-1][1].strip(), route)
+        self.assertEqual(len({title for title, _ in metadata}), len(metadata))
+        self.assertEqual(len({description for _, description in metadata}), len(metadata))
+
+    def test_navigation_has_research_leadership_about_and_notes(self):
+        document = self.pages['index.html']
+        primary = next(node for node in document.nodes if node['tag'] == 'nav' and
+                       node['attrs'].get('aria-label', '').casefold() == 'primary')
+        def descendants(node):
+            for child in node['children']:
+                if isinstance(child, dict):
+                    yield child
+                    yield from descendants(child)
+        names = {_accessible_name(node, {}).casefold() for node in descendants(primary)
+                 if node['tag'] == 'a'}
+        expected = {'research', 'publications', 'leadership', 'about', 'research notes'}
+        self.assertLessEqual(expected, names)
+
+    def test_each_research_theme_links_a_supporting_publication(self):
+        required = {
+            'reasoning-and-distillation.html': ('2026-critique-guided-distillation.html',),
+            'efficient-model-systems.html': ('2026-load-balancing-expert-pruning.html', '2025-spear-mm.html'),
+            'trustworthy-ml.html': ('2026-critique-guided-distillation.html', '2025-spear-mm.html'),
+        }
+        for route, papers in required.items():
+            with self.subTest(route=route):
+                path = self.public / 'research' / route
+                self.assertTrue(path.exists(), f'missing generated research theme: /research/{route}')
+                document = _Document()
+                document.feed(path.read_text(encoding='utf-8'))
+                hrefs = {node['attrs'].get('href', '') for node in document.nodes if node['tag'] == 'a'}
+                self.assertTrue(any(paper in href for paper in papers for href in hrefs), route)
+
+    def test_about_maps_the_two_masters_degrees_to_the_correct_fields(self):
+        path = self.public / 'about.html'
+        self.assertTrue(path.exists(), 'missing generated route: /about.html')
+        document = _Document()
+        document.feed(path.read_text(encoding='utf-8'))
+        text = ' '.join(_accessible_text(node) for node in self.visible(document))
+        text = text.casefold()
+        self.assertRegex(text, r'(?:delft.{0,120}applied mathematics|applied mathematics.{0,120}delft)')
+        self.assertRegex(text, r'(?:erlangen-nuremberg.{0,120}computational engineering|computational engineering.{0,120}erlangen-nuremberg)')
+
+    def test_research_notes_is_an_honest_empty_state(self):
+        path = self.public / 'writing.html'
+        self.assertTrue(path.exists(), 'missing generated route: /writing.html')
+        document = _Document()
+        document.feed(path.read_text(encoding='utf-8'))
+        text = ' '.join(_accessible_text(node) for node in self.visible(document))
+        self.assertIn('no research notes have been published yet', text.casefold())
+        hrefs = {node['attrs'].get('href', '') for node in document.nodes if node['tag'] == 'a'}
+        self.assertTrue(any('/research/reasoning-and-distillation.html' in href for href in hrefs))
+        self.assertTrue(any('/research/efficient-model-systems.html' in href for href in hrefs))
+        self.assertTrue(any('/research/trustworthy-ml.html' in href for href in hrefs))
+
+    def test_new_narrative_pages_avoid_confidential_claims(self):
+        for route in ('research.html', 'leadership.html', 'about.html', 'writing.html'):
+            with self.subTest(route=route):
+                document = _Document()
+                document.feed((self.public / route).read_text(encoding='utf-8'))
+                text = ' '.join(_accessible_text(node) for node in self.visible(document)).casefold()
+                for phrase in ('2,048 gpus', '15b–120b', 'financial impact', 'capital one, ai foundations', 'cutting-edge'):
+                    self.assertNotIn(phrase, text)
+                self.assertNotRegex(text, r'\b\d{5}(?:-\d{4})?\b')
 
 
 if __name__ == '__main__':

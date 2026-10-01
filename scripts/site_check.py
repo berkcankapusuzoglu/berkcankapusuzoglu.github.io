@@ -9,6 +9,7 @@ from urllib.parse import urljoin, urlparse
 
 
 PAGINATOR_REDIRECT_ROUTES = {
+    '/about/page/1.html',
     '/categories/page/1.html',
     '/gallery/page/1.html',
     '/news/page/1.html',

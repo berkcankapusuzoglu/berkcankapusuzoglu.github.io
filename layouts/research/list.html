@@ -1,0 +1,7 @@
+{{ define "main" }}
+  <header class="page-heading"><p class="eyebrow">Research</p><h1>{{ .Title }}</h1>{{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}</header>
+  <div class="prose">{{ .Content }}</div>
+  <div class="section-page-grid">
+    {{ range site.Data.profile.themes }}<article class="section-card"><h2><a href="{{ .link | relURL }}">{{ .title }}</a></h2><p>{{ .summary }}</p></article>{{ end }}
+  </div>
+{{ end }}
