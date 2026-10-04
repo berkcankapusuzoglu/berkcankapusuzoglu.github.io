@@ -226,6 +226,22 @@ class ResearchAssetsTests(unittest.TestCase):
         self.assertEqual(list(output.parent.iterdir()), [output])
         self.assertFalse(self.render_temp.exists())
 
+    def test_prepare_without_replace_preserves_destination_created_during_rendering(self):
+        output = self.root / 'content/publications/paper/media/figure.png'
+
+        def concurrent_render(command, **options):
+            output.parent.mkdir(parents=True)
+            output.write_bytes(b'concurrent asset')
+            self.render_png(command, **options)
+
+        with patch('shutil.which', return_value='pdftoppm'), \
+                patch('subprocess.run', side_effect=concurrent_render), \
+                self.assertRaises(FileExistsError):
+            self.prepare()
+        self.assertEqual(output.read_bytes(), b'concurrent asset')
+        self.assertEqual(list(output.parent.iterdir()), [output])
+        self.assertFalse(self.render_temp.exists())
+
 
 if __name__ == '__main__':
     unittest.main()

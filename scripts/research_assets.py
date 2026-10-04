@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import io
 import json
+import os
 from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
@@ -138,7 +139,11 @@ def prepare_figure(archive: Path, project_name: str, entry_name: str,
             staged = Path(staging.name)
         try:
             shutil.copyfile(rendered, staged)
-            staged.replace(output)
+            if replace:
+                staged.replace(output)
+            else:
+                # Creating a hard link atomically fails if another writer won.
+                os.link(staged, output)
         finally:
             staged.unlink(missing_ok=True)
     return result
