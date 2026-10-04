@@ -5,6 +5,11 @@
 __pycache__/
 .worktrees/
 
+# Private research sources and temporary PDF/PNG conversions
+/research-source/
+/asset-work/
+Overleaf Projects (12 items).zip
+
 # Latex files
 ./static/files/resume/resume*.aux
 ./static/files/resume/resume*.bcf

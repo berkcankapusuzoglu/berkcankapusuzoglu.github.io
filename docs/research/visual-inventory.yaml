@@ -1,0 +1,172 @@
+schema_version: 1
+archive_name: "Overleaf Projects (12 items).zip"
+archive_sha256: "d1718cef0e7bc8be339862dbf05fbebd42ebb8a31e7bed2de13cfec4c5f21f8d"
+project_count: 12
+figure_count: 234
+motion_count: 0
+source_policy: "Private outer and nested ZIPs remain outside Git; only reviewed derivatives are publishable."
+temporary_work_directory: "asset-work/"
+caption_policy: "Captions below are editorial summaries, not verbatim source captions. Source labels refer to archive TeX; verify final public numbering before publication."
+license_checks:
+  checked_on: "2026-10-04"
+  papers:
+    - source_url: "https://arxiv.org/abs/2505.11628"
+      version: "v4"
+      license: "CC BY 4.0"
+      license_url: "https://creativecommons.org/licenses/by/4.0/"
+      evidence: "Canonical paper page view-license link."
+    - source_url: "https://arxiv.org/abs/2609.04453"
+      version: "v1"
+      license: "CC BY 4.0"
+      license_url: "https://creativecommons.org/licenses/by/4.0/"
+      evidence: "Canonical paper page view-license link."
+    - source_url: "https://arxiv.org/abs/2511.08500"
+      version: "v1"
+      license: "CC BY 4.0"
+      license_url: "https://creativecommons.org/licenses/by/4.0/"
+      evidence: "Canonical paper page view-license link; presentation-specific assets still need provenance matching."
+projects:
+  - archive: "Adaptive-Mitsubishi.zip"
+    publication_slug: "2022_Kapusuzoglu_Structural_and_Multidisciplinary_Optimization"
+    figure_count: 25
+    motion_count: 0
+    status: backlog
+    license: rights-review-required
+    source_url: "https://link.springer.com/article/10.1007/s00158-022-03402-x"
+    reason: "Queue an adaptive-surrogate overview after reuse rights are verified."
+  - archive: "IEEE-SPEARMM Presentation.zip"
+    publication_slug: "2025-spear-mm"
+    figure_count: 3
+    motion_count: 0
+    status: selected
+    license: rights-review-required
+    source_url: "https://arxiv.org/abs/2511.08500"
+    reason: "Preferred Release 1 SPEAR-MM source; match presentation figures to the licensed preprint before publishing."
+    selected_entries:
+      - path: "SPEARMM_pipeline.pdf"
+        sha256: "98cfaa86c35783210101d716a20f5f84c5b75f5b42cb699a234945fdd1db9110"
+        source_label: "Presentation slide 4: SPEAR-MM: A Practical Framework"
+        source_figure_number: null
+        caption: "SPEAR-MM evaluates layer importance and selectively restores parameters through spherical merging."
+        role: lead
+        status: selected
+        license: rights-review-required
+        reason: "Explains the method; presentation provenance must be confirmed."
+      - path: "retention_vs_adaptation_tradeoff.pdf"
+        sha256: "0abd1ea54fcae66c1d6624668b648e462a6688a22bec385fc717adfe343c1ad7"
+        source_label: "Presentation slide 9: Results: Domain Performance vs. Retention"
+        source_figure_number: null
+        caption: "Domain adaptation and retention of general capabilities form a controllable trade-off."
+        role: result
+        status: selected
+        license: rights-review-required
+        reason: "Supports the adaptation-retention story; presentation provenance must be confirmed."
+  - archive: "MESA_ODI_NeurIPS26.zip"
+    publication_slug: "2026-load-balancing-expert-pruning"
+    figure_count: 10
+    motion_count: 0
+    status: selected
+    license: "CC BY 4.0"
+    source_url: "https://arxiv.org/abs/2609.04453"
+    reason: "Release 1 result visual; entropy and Pareto plots remain later options."
+    selected_entries:
+      - path: "figures/ppl_accuracy_scatter.pdf"
+        sha256: "ce164291e0bafc6ccbcc7746c386ba03c1073dbc55b138de62de5707de6c7ed8"
+        source_label: "sections/sec_appendix.tex: fig:ppl-scatter"
+        source_figure_number: null
+        caption: "Perplexity does not reliably predict task accuracy across pruning configurations under over-dispersed routing."
+        role: lead
+        status: selected
+        license: "CC BY 4.0"
+        reason: "Makes the perplexity-versus-accuracy disconnect visible."
+  - archive: "MultiLevel - Mitsubishi.zip"
+    publication_slug: "2023_Kapusuzoglu_Journal_of_Computing_and_Information_Science_in_Engineering"
+    figure_count: 16
+    motion_count: 0
+    status: backlog
+    license: rights-review-required
+    source_url: "https://asmedigitalcollection.asme.org/computingengineering/article-abstract/23/1/011006/1145675"
+    reason: "Queue the multi-level Bayesian network after reuse rights are verified."
+  - archive: "MultiObj - ASME_RISK-21-1006_final.zip"
+    publication_slug: "2022_Kapusuzoglu_ASCE-ASME_Journal_of_Risk_and_Uncertainty_in_Engineering_Systems_Part_B_Mechanical_Engineering"
+    figure_count: 25
+    motion_count: 0
+    status: backlog
+    license: rights-review-required
+    source_url: "https://asmedigitalcollection.asme.org/risk/article-abstract/8/1/011112/1129117"
+    reason: "Queue methodology and one Pareto-front result after reuse rights are verified."
+  - archive: "PIML-RESS.zip"
+    publication_slug: "2021_Kapusuzoglu_Reliability_Engineering_&_System_Safety"
+    figure_count: 58
+    motion_count: 0
+    status: backlog
+    license: rights-review-required
+    source_url: "https://www.sciencedirect.com/science/article/pii/S0951832021002477"
+    reason: "Queue the PIML strategy diagram after reuse rights are verified."
+  - archive: "PIML.zip"
+    publication_slug: "2020_Kapusuzoglu_Jom"
+    figure_count: 14
+    motion_count: 0
+    status: backlog
+    license: rights-review-required
+    source_url: "https://link.springer.com/article/10.1007/s11837-020-04438-4"
+    reason: "Queue one physics-informed ML comparison after reuse rights are verified."
+  - archive: "Paper Category.zip"
+    publication_slug: null
+    figure_count: 0
+    motion_count: 0
+    status: template
+    license: not-applicable
+    source_url: null
+    reason: "Template with no publication visuals."
+  - archive: "Process Optimization Under Uncertainty.zip"
+    publication_slug: "2020_Kapusuzoglu_Journal_of_Manufacturing_Science_and_Engineering"
+    figure_count: 41
+    motion_count: 0
+    status: backlog
+    license: rights-review-required
+    source_url: "https://asmedigitalcollection.asme.org/manufacturingscience/article-abstract/143/2/021007/1086236"
+    reason: "Queue a bond-formation schematic or optimization workflow after reuse rights are verified."
+  - archive: "Reasoning_NeurIPS2025_workshop.zip"
+    publication_slug: "2025-prompt-difficulty-prediction"
+    figure_count: 24
+    motion_count: 0
+    status: backlog
+    license: rights-review-required
+    source_url: "https://openreview.net/pdf/87684b1b0842859502be60986422dd7752b9371d.pdf"
+    reason: "Queue overview and routing plots for Release 2; verify source license then."
+  - archive: "SPEAR-MM.zip"
+    publication_slug: "2025-spear-mm"
+    figure_count: 4
+    motion_count: 0
+    status: duplicate
+    license: rights-review-required
+    source_url: "https://arxiv.org/abs/2511.08500"
+    reason: "Older/incomplete source superseded by the presentation archive; fallback only if presentation provenance fails."
+  - archive: "[ICML_2026] CGD.zip"
+    publication_slug: "2026-critique-guided-distillation"
+    figure_count: 14
+    motion_count: 0
+    status: selected
+    license: "CC BY 4.0"
+    source_url: "https://arxiv.org/abs/2505.11628"
+    reason: "Release 1 method and result story, including the sole homepage research visual."
+    selected_entries:
+      - path: "figures/cgd_overview.pdf"
+        sha256: "c44af45ce659d37726beeca297f6a9e3d5b05af4377d212608c78fbddac13206"
+        source_label: "sections/intro.tex: fig:cgd_overview"
+        source_figure_number: 1
+        caption: "A student learns from teacher critiques and refined answers during training, then answers without a teacher at inference."
+        role: lead
+        status: selected
+        license: "CC BY 4.0"
+        reason: "Explains the training-to-inference story on the homepage and paper page."
+      - path: "figures/accuracy_combined.pdf"
+        sha256: "e5b501cbf3ac5782cd860090d1e48f2f758384a10853ce75c2475176bce7de91"
+        source_label: "sections/intro.tex: fig:result"
+        source_figure_number: 2
+        caption: "CGD improves LLaMA3.1-8B reasoning performance compared with distilled SFT and critique fine-tuning."
+        role: result
+        status: selected
+        license: "CC BY 4.0"
+        reason: "Supports the method explanation with the combined accuracy result."
