@@ -6,6 +6,9 @@ import re
 import json
 import html
 import shutil
+import struct
+import zlib
+import os
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -360,6 +363,132 @@ class VisualMetadataTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0, 'Invalid visual unexpectedly built')
                 self.assertIn('contract-fixture/index.md', (result.stdout + result.stderr).replace('\\', '/'))
                 self.assertIn('accuracy', result.stdout + result.stderr)
+
+
+class ResearchComponentTests(unittest.TestCase):
+    """Exercise production partials with local image resources, not source snapshots."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.repo = Path(__file__).parents[1]
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temp.cleanup)
+        cls.root = Path(cls.temp.name)
+        cls.public = cls.root / 'public'
+        layouts = cls.root / 'layouts'
+        shutil.copytree(cls.repo / 'layouts', layouts)
+        (layouts / 'publications/single.html').write_text(
+            '{{ define "main" }}<h1>{{ .Title }}</h1>'
+            '{{ partial "research-visual-validate.html" . }}'
+            '{{ range .Params.visuals }}{{ partial "research-figure.html" '
+            '(dict "Page" $ "Visual" . "Context" "publication") }}{{ end }}{{ end }}',
+            encoding='utf-8')
+        (layouts / 'index.html').write_text(
+            '{{ define "main" }}<h1>Research fixture</h1>'
+            '{{ range partial "featured-publications.html" . }}{{ $page := . }}'
+            '{{ range .Params.visuals }}{{ if .homepage }}'
+            '{{ partial "research-figure.html" (dict "Page" $page "Visual" . "Context" "homepage") }}'
+            '{{ end }}{{ end }}{{ end }}{{ end }}', encoding='utf-8')
+        # A wide raster catches accidental upscaling and missing responsive derivatives.
+        def chunk(kind, data):
+            return struct.pack('!I', len(data)) + kind + data + struct.pack('!I', zlib.crc32(kind + data))
+        png = (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('!2I5B', 1600, 900, 8, 2, 0, 0, 0))
+               + chunk(b'IDAT', zlib.compress((b'\x00' + b'\xff\xff\xff' * 1600) * 900)) + chunk(b'IEND', b''))
+        for name in ('static', 'sequence', 'vector'):
+            bundle = cls.root / 'content/publications' / name
+            bundle.mkdir(parents=True)
+            visual = dict(VisualMetadataTests().visual(), file='result.png', homepage=name == 'static')
+            if name == 'sequence':
+                visual['sequence'] = [dict(label='Initial evidence', file='result.png'),
+                                      dict(label='Combined evidence', file='result.png'),
+                                      dict(label='Final interpretation', file='result.png')]
+            if name == 'vector':
+                visual['file'] = 'result.svg'
+            metadata = dict(title=f'{name.title()} fixture', date='2026-01-01', authors=['Author'],
+                            venue=dict(name='Test venue', type='preprint'), status='preprint',
+                            summary='A test publication.', contribution='A test contribution.',
+                            topics=[], links=[], featured=name == 'static', featured_weight=1, visuals=[visual])
+            (bundle / 'index.md').write_text(json.dumps(metadata), encoding='utf-8')
+            (bundle / 'result.png').write_bytes(png)
+            (bundle / 'result.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"></svg>', encoding='utf-8')
+        cls.build = subprocess.run(['hugo', '--contentDir', str(cls.root / 'content'), '--layoutDir',
+                                   str(layouts), '--destination', str(cls.public), '--panicOnWarning'],
+                                  cwd=cls.repo, capture_output=True, text=True)
+
+    def page(self, name):
+        self.assertEqual(self.build.returncode, 0, self.build.stdout + self.build.stderr)
+        path = self.public / name
+        document = _Document()
+        document.feed(path.read_text(encoding='utf-8'))
+        return document
+
+    def test_static_output_preserves_interpretation_attribution_and_responsive_images(self):
+        document = self.page('publications/static.html')
+        figures = [n for n in document.nodes if n['tag'] == 'figure' and 'data-research-visual' in n['attrs']]
+        self.assertEqual(len(figures), 1)
+        visible_text = _accessible_text(figures[0])
+        for text in ('The model improves accuracy.', 'Accuracy improves.', 'Paper figure 1', 'CC BY 4.0'):
+            self.assertIn(text, visible_text)
+        self.assertTrue(any(n['tag'] == 'a' and n['attrs'].get('href') == 'https://example.org/paper'
+                            for n in document.nodes))
+        image = next(n for n in document.nodes if n['tag'] == 'img')
+        self.assertEqual(image['attrs']['width'], '1600')
+        self.assertEqual(image['attrs']['height'], '900')
+        self.assertEqual(image['attrs']['loading'], 'lazy')
+        source = next(n for n in document.nodes if n['tag'] == 'source')
+        self.assertEqual(source['attrs']['type'], 'image/webp')
+        self.assertTrue(all(f'{width}w' in source['attrs']['srcset'] for width in (640, 960, 1440)))
+        self.assertEqual(validate_html_document(self.public / 'publications/static.html'), [])
+
+    def test_only_homepage_selected_image_has_eager_priority(self):
+        document = self.page('index.html')
+        image = next(n for n in document.nodes if n['tag'] == 'img')
+        self.assertEqual(image['attrs']['loading'], 'eager')
+        self.assertEqual(image['attrs']['fetchpriority'], 'high')
+        self.assertTrue(any(n['attrs'].get('data-research-homepage') == 'true' for n in document.nodes))
+
+    def test_vector_resource_retains_viewbox_dimensions(self):
+        document = self.page('publications/vector.html')
+        image = next(n for n in document.nodes if n['tag'] == 'img')
+        self.assertEqual((image['attrs']['width'], image['attrs']['height']), ('800', '450'))
+        self.assertTrue(image['attrs']['src'].endswith('result.svg'))
+
+    def test_sequence_has_static_final_frame_labels_and_accessible_control(self):
+        document = self.page('publications/sequence.html')
+        frames = [n for n in document.nodes if 'data-sequence-frame' in n['attrs']]
+        self.assertEqual(len(frames), 3)
+        self.assertTrue(frames[0]['hidden'])
+        self.assertTrue(frames[1]['hidden'])
+        self.assertFalse(frames[-1]['hidden'])
+        self.assertTrue(any(n['tag'] == 'button' and _accessible_name(n, {}).strip() for n in document.nodes))
+        self.assertTrue(any(n['attrs'].get('aria-live') == 'polite' for n in document.nodes))
+        step_text = ' '.join(_accessible_text(n) for n in document.nodes if 'data-sequence-step' in n['attrs'])
+        for label in ('Initial evidence', 'Combined evidence', 'Final interpretation'):
+            self.assertIn(label, step_text)
+        self.assertEqual(validate_html_document(self.public / 'publications/sequence.html'), [])
+
+    def test_sequence_script_is_conditional_and_fingerprinted(self):
+        for name, expected in (('index.html', False), ('publications/static.html', False),
+                               ('publications/vector.html', False), ('publications/sequence.html', True)):
+            with self.subTest(name=name):
+                scripts = [n['attrs'].get('src', '') for n in self.page(name).nodes if n['tag'] == 'script']
+                sequence_scripts = [src for src in scripts if 'research-visuals' in src]
+                self.assertEqual(bool(sequence_scripts), expected)
+                if expected:
+                    self.assertRegex(sequence_scripts[0], r'research-visuals\.min\.[a-f0-9]+\.js$')
+
+    def test_controller_syntax_and_browser_motion_keyboard_print_contract(self):
+        self.page('publications/sequence.html')
+        syntax = subprocess.run(['node', '--check', 'assets/js/research-visuals.js'],
+                                cwd=self.repo, capture_output=True, text=True)
+        self.assertEqual(syntax.returncode, 0, syntax.stdout + syntax.stderr)
+        environment = dict(os.environ)
+        if os.name == 'nt' and Path('C:/Program Files/Google/Chrome/Application/chrome.exe').is_file():
+            environment.pop('PUPPETEER_EXECUTABLE_PATH', None)
+        browser = subprocess.run(['node', 'scripts/check_a11y.mjs', '--sequence-fixture', str(self.public)],
+                                 cwd=self.repo, env=environment, capture_output=True, text=True, timeout=120)
+        self.assertEqual(browser.returncode, 0, browser.stdout + browser.stderr)
+        self.assertIn('Sequence browser checks passed', browser.stdout)
 
 
 class GeneratedShellTests(unittest.TestCase):

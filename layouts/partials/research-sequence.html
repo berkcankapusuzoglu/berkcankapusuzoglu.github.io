@@ -1,0 +1,20 @@
+{{- $visual := .Visual -}}
+{{- $id := .ID | default (printf "research-%s-%s" (.Page.RelPermalink | anchorize) ($visual.id | anchorize)) -}}
+{{- $last := sub (len $visual.sequence) 1 -}}
+<div class="research-sequence" data-research-sequence>
+  <div id="{{ $id }}-frames" class="research-visual-plot research-sequence-frames">
+    {{ range $index, $frame := $visual.sequence }}
+      <div data-sequence-frame data-label="{{ $frame.label }}"{{ if eq $index $last }} data-sequence-poster{{ else }} hidden{{ end }}>
+        {{ partial "research-picture.html" (dict "Page" $.Page "File" $frame.file "Alt" (printf "%s: %s" $visual.alt $frame.label) "Eager" (and $.Eager (eq $index $last))) }}
+      </div>
+    {{ end }}
+  </div>
+  <ol class="research-sequence-steps" aria-label="Sequence steps">
+    {{ range $index, $frame := $visual.sequence }}<li data-sequence-step{{ if eq $index $last }} aria-current="step"{{ end }}>{{ $frame.label }}</li>{{ end }}
+  </ol>
+  <div class="research-sequence-controls">
+    <button type="button" data-sequence-control aria-controls="{{ $id }}-frames" disabled>Play sequence</button>
+    <p data-sequence-status role="status" aria-live="polite" aria-atomic="true">Step {{ len $visual.sequence }} of {{ len $visual.sequence }}: {{ (index $visual.sequence $last).label }}. Final frame.</p>
+  </div>
+  <noscript><p class="research-sequence-note">The final frame is shown. Enable JavaScript to step through the sequence.</p></noscript>
+</div>

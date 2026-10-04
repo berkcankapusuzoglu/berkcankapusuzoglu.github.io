@@ -1,0 +1,16 @@
+{{- $visual := .Visual -}}
+{{- $homepage := and (eq .Context "homepage") ($visual.homepage | default false) -}}
+{{- $id := printf "research-%s-%s" (.Page.RelPermalink | anchorize) ($visual.id | anchorize) -}}
+<figure class="research-visual research-visual--{{ $visual.role }}" data-research-visual{{ if $homepage }} data-research-homepage="true"{{ end }} aria-labelledby="{{ $id }}-takeaway">
+  <p class="research-visual-role">{{ $visual.role | humanize }} figure</p>
+  {{ if $visual.sequence }}
+    {{ partial "research-sequence.html" (dict "Page" .Page "Visual" $visual "Eager" $homepage "ID" $id) }}
+  {{ else }}
+    <div class="research-visual-plot">{{ partial "research-picture.html" (dict "Page" .Page "File" $visual.file "Alt" $visual.alt "Eager" $homepage) }}</div>
+  {{ end }}
+  <figcaption class="research-visual-caption">
+    <p id="{{ $id }}-takeaway" class="research-visual-takeaway">{{ $visual.takeaway }}</p>
+    <p>{{ $visual.caption }}</p>
+    <p class="research-visual-source">Source: <a href="{{ $visual.source_url }}">{{ $visual.source_label }}</a>. <span>License: {{ $visual.license }}.</span></p>
+  </figcaption>
+</figure>

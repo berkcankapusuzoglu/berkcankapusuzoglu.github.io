@@ -3,6 +3,7 @@
 /assets/jsconfig.json
 .hugo_build.lock
 __pycache__/
+node_modules/
 .worktrees/
 
 # Private research sources and temporary PDF/PNG conversions

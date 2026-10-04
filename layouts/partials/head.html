@@ -3,3 +3,15 @@
 {{ partial "seo.html" . }}
 {{ $style := resources.Get "css/main.css" | minify | fingerprint }}
 <link rel="stylesheet" href="{{ if .RootPaths }}{{ $style.Permalink }}{{ else }}{{ $style.RelPermalink }}{{ end }}">
+{{ $page := .Page | default . }}
+{{ $hasSequence := false }}
+{{ range $page.Params.visuals }}{{ if .sequence }}{{ $hasSequence = true }}{{ end }}{{ end }}
+{{ if $page.IsHome }}
+  {{ range partial "featured-publications.html" $page }}
+    {{ range .Params.visuals }}{{ if and .homepage .sequence }}{{ $hasSequence = true }}{{ end }}{{ end }}
+  {{ end }}
+{{ end }}
+{{ if $hasSequence }}
+  {{ $sequences := resources.Get "js/research-visuals.js" | minify | fingerprint }}
+  <script src="{{ if .RootPaths }}{{ $sequences.Permalink }}{{ else }}{{ $sequences.RelPermalink }}{{ end }}" defer></script>
+{{ end }}

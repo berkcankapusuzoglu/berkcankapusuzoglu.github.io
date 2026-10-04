@@ -1,0 +1,38 @@
+{{- $resource := .Page.Resources.GetMatch .File -}}
+{{- $width := 0 -}}{{- $height := 0 -}}
+{{- $sources := slice -}}
+{{- if eq $resource.MediaType.SubType "svg" -}}
+  {{- $svg := index (findRE `<svg\b[^>]*>` $resource.Content 1) 0 -}}
+  {{- $widthAttr := findRE `\bwidth=["'][0-9.]+(?:px)?["']` $svg 1 -}}
+  {{- $heightAttr := findRE `\bheight=["'][0-9.]+(?:px)?["']` $svg 1 -}}
+  {{- if and $widthAttr $heightAttr -}}
+    {{- $width = int (math.Ceil (float (replaceRE `[^0-9.]` "" (index $widthAttr 0)))) -}}
+    {{- $height = int (math.Ceil (float (replaceRE `[^0-9.]` "" (index $heightAttr 0)))) -}}
+  {{- else -}}
+    {{- with findRE `\bviewBox=["'][^"']+["']` $svg 1 -}}
+      {{- $dimensions := findRE `[-+]?[0-9]*\.?[0-9]+` (index . 0) -}}
+      {{- if eq (len $dimensions) 4 -}}
+        {{- $width = int (math.Ceil (float (index $dimensions 2))) -}}
+        {{- $height = int (math.Ceil (float (index $dimensions 3))) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- $width = $resource.Width -}}{{- $height = $resource.Height -}}
+  {{- $used := slice -}}
+  {{- range slice 640 960 1440 -}}
+    {{- $candidateWidth := int (math.Min . $width) -}}
+    {{- if not (in $used $candidateWidth) -}}
+      {{- $used = $used | append $candidateWidth -}}
+      {{- $image := $resource.Resize (printf "%dx webp" $candidateWidth) -}}
+      {{- $sources = $sources | append (printf "%s %dw" $image.RelPermalink $image.Width) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if or (le $width 0) (le $height 0) -}}
+  {{- errorf "Publication %s visual resource %s needs positive dimensions or an SVG viewBox" .Page.File.Path .File -}}
+{{- end -}}
+<picture>
+  {{- with $sources }}<source type="image/webp" srcset="{{ delimit . ", " }}" sizes="(min-width: 74.5rem) 1152px, (min-width: 42rem) calc(100vw - 2.5rem), calc(100vw - 2rem)">{{ end }}
+  <img src="{{ $resource.RelPermalink }}" alt="{{ .Alt }}" width="{{ $width }}" height="{{ $height }}" loading="{{ if .Eager }}eager{{ else }}lazy{{ end }}"{{ if .Eager }} fetchpriority="high"{{ end }} decoding="async">
+</picture>
