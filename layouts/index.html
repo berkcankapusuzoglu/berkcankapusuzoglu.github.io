@@ -23,7 +23,7 @@
   </section>
   <section class="home-section featured-section" aria-labelledby="featured-heading">
     <div class="section-heading"><p class="eyebrow">Selected publications</p><h2 id="featured-heading">Research in practice</h2></div>
-    <div class="featured-grid">{{ range partial "featured-publications.html" . }}{{ partial "publication-card.html" . }}{{ end }}</div>
+    <div class="featured-grid">{{ range $index, $page := partial "featured-publications.html" . }}{{ partial "publication-card.html" (dict "Page" $page "HomepageLead" (eq $index 0)) }}{{ end }}</div>
     <p><a class="text-link" href="{{ $profile.links.publications | relURL }}">Browse all publications →</a></p>
   </section>
   <section class="home-section career-section" aria-labelledby="career-heading">

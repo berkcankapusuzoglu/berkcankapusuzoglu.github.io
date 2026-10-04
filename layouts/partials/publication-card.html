@@ -1,10 +1,19 @@
-{{ partial "publication-validate.html" . }}
-{{ partial "publication-validate.html" . }}
-<article class="publication-card publication-detail" data-publication-card data-publication data-status="{{ .Params.status }}" data-topic="{{ delimit .Params.topics " " }}">
-  <p class="eyebrow">{{ .Date.Format "2006" }}{{ if .Params.featured }} · Featured research{{ end }}</p>
-  <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
-  <p class="publication-authors" data-publication-authors>{{ delimit .Params.authors ", " }}</p>
-  <p data-publication-venue>{{ .Params.venue.name }} · <span data-venue-type="{{ .Params.venue.type }}">{{ .Params.venue.type | humanize }}</span> · {{ .Params.status | humanize }}</p>
-  <p data-publication-abstract>{{ .Params.summary }}</p>
-  {{ partial "publication-links.html" . }}
+{{ $page := . }}
+{{ $lead := false }}
+{{ if reflect.IsMap . }}{{ $page = .Page }}{{ $lead = .HomepageLead }}{{ end }}
+{{ partial "publication-validate.html" $page }}
+<article class="publication-card publication-detail{{ if $lead }} publication-card--lead{{ end }}" data-publication-card data-publication data-status="{{ $page.Params.status }}" data-topic="{{ delimit $page.Params.topics " " }}">
+  <p class="eyebrow">{{ $page.Date.Format "2006" }}{{ if $page.Params.featured }} · Featured research{{ end }}</p>
+  <h2><a href="{{ $page.RelPermalink }}">{{ $page.Title }}</a></h2>
+  <p class="publication-authors" data-publication-authors>{{ delimit $page.Params.authors ", " }}</p>
+  <p data-publication-venue>{{ $page.Params.venue.name }} · <span data-venue-type="{{ $page.Params.venue.type }}">{{ $page.Params.venue.type | humanize }}</span> · {{ $page.Params.status | humanize }}</p>
+  <p data-publication-abstract>{{ $page.Params.summary }}</p>
+  {{ partial "publication-links.html" $page }}
+  {{ if $lead }}
+    {{ range first 1 (where $page.Params.visuals "homepage" true) }}
+      <p class="research-visual-hint">Scroll the figure sideways to read its labels, or open the full-size image below.</p>
+      {{ partial "research-figure.html" (dict "Page" $page "Visual" . "Context" "homepage") }}
+      <p class="research-visual-access"><a href="{{ ($page.Resources.GetMatch .file).RelPermalink }}">Open full-size figure</a> for labels and details.</p>
+    {{ end }}
+  {{ end }}
 </article>

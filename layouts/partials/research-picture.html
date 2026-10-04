@@ -32,7 +32,11 @@
 {{- if or (le $width 0) (le $height 0) -}}
   {{- errorf "Publication %s visual resource %s needs positive dimensions or an SVG viewBox" .Page.File.Path .File -}}
 {{- end -}}
+{{- $sizes := "(min-width: 74.5rem) 1152px, (min-width: 42rem) calc(100vw - 2.5rem), calc(100vw - 2rem)" -}}
+{{- if .Page.Params.featured -}}
+  {{- $sizes = "(max-width: 42rem) 1440px, (min-width: 74.5rem) 1152px, calc(100vw - 2.5rem)" -}}
+{{- end -}}
 <picture>
-  {{- with $sources }}<source type="image/webp" srcset="{{ delimit . ", " }}" sizes="(min-width: 74.5rem) 1152px, (min-width: 42rem) calc(100vw - 2.5rem), calc(100vw - 2rem)">{{ end }}
+  {{- with $sources }}<source type="image/webp" srcset="{{ delimit . ", " }}" sizes="{{ $sizes }}">{{ end }}
   <img src="{{ $resource.RelPermalink }}" alt="{{ .Alt }}" width="{{ $width }}" height="{{ $height }}" loading="{{ if .Eager }}eager{{ else }}lazy{{ end }}"{{ if .Eager }} fetchpriority="high"{{ end }} decoding="async">
 </picture>

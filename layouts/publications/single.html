@@ -7,7 +7,14 @@
   <header class="page-heading"><p class="eyebrow">{{ .Params.venue.type | humanize }} · {{ .Params.status | humanize }} · <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006" }}</time></p><h1>{{ .Title }}</h1></header>
   <p data-publication-authors>{{ delimit .Params.authors ", " }}</p>
   <p data-publication-venue>{{ .Params.venue.name }} · <span data-venue-type="{{ .Params.venue.type }}">{{ .Params.venue.type | humanize }}</span></p>
-  <div class="prose"><h2>Summary</h2><p data-publication-abstract>{{ .Params.summary }}</p><h2>Research contribution</h2><p>{{ .Params.contribution }}</p>{{ .Content }}</div>
+  <div class="prose"><h2>Summary</h2><p data-publication-abstract>{{ .Params.summary }}</p><h2>Research contribution</h2><p>{{ .Params.contribution }}</p></div>
+  {{ range $index, $visual := .Params.visuals }}
+    {{ if gt $index 0 }}<h2>What the results show</h2>{{ end }}
+    <p class="research-visual-hint">Scroll the figure sideways to read its labels, or open the full-size image below.</p>
+    {{ partial "research-figure.html" (dict "Page" $ "Visual" $visual "Context" "publication") }}
+    <p class="research-visual-access"><a href="{{ ($.Resources.GetMatch $visual.file).RelPermalink }}">Open full-size figure</a>{{ if eq $visual.id "cgd-accuracy" }}. Some numeric labels touch in the source figure. Compare the bars here and use the full-size figure for closer inspection.{{ else }} for labels and details.{{ end }}</p>
+  {{ end }}
+  <div class="prose">{{ .Content }}</div>
   {{ partial "publication-links.html" . }}
   <p><a href="{{ "publications.html" | relURL }}">All publications</a></p>
 </article>

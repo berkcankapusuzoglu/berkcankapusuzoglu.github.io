@@ -19,6 +19,7 @@ from scripts.site_check import (
     _Document,
     _accessible_name,
     _accessible_text,
+    _descendants,
 )
 
 
@@ -646,8 +647,8 @@ class GeneratedShellTests(unittest.TestCase):
             },
             '2026-load-balancing-expert-pruning.html': {
                 'sameAs': ['https://arxiv.org/abs/2609.04453'],
-                'part_type': None,
-                'part_name': None,
+                'part_type': 'CreativeWorkSeries',
+                'part_name': 'NeurIPS 2026 Workshop on On-Device Intelligence',
             },
             '2020_kapusuzoglu_jom.html': {
                 'sameAs': ['https://link.springer.com/article/10.1007/s11837-020-04438-4'],
@@ -667,7 +668,7 @@ class GeneratedShellTests(unittest.TestCase):
                 self.assertNotIn('additionalProperty', schema)
                 self.assertNotIn('citation', schema)
                 self.assertNotIn('status', schema)
-                self.assertIn('preprint' if route.startswith('2026-load') else 'published',
+                self.assertIn('accepted' if route.startswith('2026-load') else 'published',
                               visible_text.lower())
                 if expected['part_type']:
                     self.assertEqual(schema['isPartOf'], {
@@ -994,6 +995,62 @@ class GeneratedShellTests(unittest.TestCase):
             'When Load-Balancing Goes Too Far: Expert Pruning in Over-Dispersed Mixture-of-Experts Models',
             'SPEAR-MM: Selective Parameter Evaluation and Restoration via Model Merging for Efficient Financial LLM Adaptation',
         ])
+
+    def test_homepage_selects_only_cgd_overview_and_keeps_other_cards_text_only(self):
+        document = self.pages['index.html']
+        figures = [n for n in self.visible(document) if 'data-research-visual' in n['attrs']]
+        self.assertEqual(len(figures), 1)
+        self.assertEqual(figures[0]['attrs'].get('data-research-homepage'), 'true')
+        images = [n for n in self.visible(document) if n['tag'] == 'img' and '/media/' in n['attrs'].get('src', '')]
+        self.assertEqual(len(images), 1)
+        self.assertIn('/2026-critique-guided-distillation/media/cgd-overview.png', images[0]['attrs']['src'])
+        for card in [n for n in self.visible(document) if 'data-publication-card' in n['attrs']][1:]:
+            self.assertFalse(any(n['tag'] == 'img' for n in _descendants(card)))
+
+    def test_featured_paper_figures_render_in_story_order_with_visible_interpretation(self):
+        expected = {
+            '2026-critique-guided-distillation': ['cgd-overview.png', 'cgd-accuracy.png'],
+            '2026-load-balancing-expert-pruning': ['ppl-accuracy.png'],
+            '2025-spear-mm': ['spear-pipeline.png', 'retention-adaptation.png'],
+        }
+        for slug, files in expected.items():
+            with self.subTest(slug=slug):
+                document = self.all_pages[f'publications/{slug}.html']
+                visible = self.visible(document)
+                figures = [n for n in visible if 'data-research-visual' in n['attrs']]
+                self.assertEqual(len(figures), len(files))
+                images = [n for n in visible if n['tag'] == 'img']
+                self.assertEqual([Path(n['attrs']['src']).name for n in images], files)
+                for figure in figures:
+                    caption = next(n for n in figure['children'] if isinstance(n, dict) and n['tag'] == 'figcaption')
+                    paragraphs = [n for n in caption['children'] if isinstance(n, dict) and n['tag'] == 'p']
+                    self.assertTrue(_accessible_text(paragraphs[0]).strip())
+                    self.assertIn('research-visual-takeaway', paragraphs[0]['attrs'].get('class', ''))
+                    self.assertIn('CC BY 4.0', _accessible_text(paragraphs[-1]))
+                    self.assertIn('Figure ', _accessible_text(paragraphs[-1]))
+                    self.assertGreater(visible.index(caption), visible.index(images[figures.index(figure)]))
+                contribution = next(n for n in visible if n['tag'] == 'h2' and _accessible_text(n).strip() == 'Research contribution')
+                self.assertLess(visible.index(contribution), visible.index(figures[0]))
+
+    def test_paper_figures_offer_original_resolution_for_dense_labels(self):
+        for slug, count in [('2026-critique-guided-distillation', 2),
+                            ('2026-load-balancing-expert-pruning', 1), ('2025-spear-mm', 2)]:
+            document = self.all_pages[f'publications/{slug}.html']
+            links = [n for n in self.visible(document) if n['tag'] == 'a' and
+                     _accessible_text(n).strip() == 'Open full-size figure']
+            self.assertEqual(len(links), count)
+            self.assertTrue(all(n['attrs']['href'].endswith('.png') for n in links))
+
+    def test_expert_pruning_identifies_accepted_odi_workshop(self):
+        for route in ('index.html', 'publications/2026-load-balancing-expert-pruning.html'):
+            document = self.all_pages[route]
+            papers = [n for n in self.visible(document) if 'data-publication' in n['attrs'] and
+                      'When Load-Balancing Goes Too Far' in _accessible_text(n)]
+            self.assertEqual(len(papers), 1)
+            self.assertEqual(papers[0]['attrs']['data-status'], 'accepted')
+            self.assertIn('NeurIPS 2026 Workshop on On-Device Intelligence', _accessible_text(papers[0]))
+            self.assertTrue(any(n['attrs'].get('data-venue-type') == 'workshop' for n in _descendants(papers[0])))
+            self.assertTrue(any(n['attrs'].get('href') == 'https://arxiv.org/abs/2609.04453' for n in _descendants(papers[0])))
 
     def test_homepage_proof_strip_uses_verified_publication_facts(self):
         text = ' '.join(_accessible_text(node) for node in self.visible(self.pages['index.html']))

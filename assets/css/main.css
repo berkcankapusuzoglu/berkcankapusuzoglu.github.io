@@ -51,9 +51,12 @@ h2, h3 { line-height: 1.2; }
 .focus-card h3 { margin: 1rem 0 .45rem; font-size: 1.25rem; }
 .focus-card h3 a { color: var(--ink); text-decoration-thickness: .08em; }
 .focus-card p { margin: 0; color: var(--muted); }
-.featured-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-.featured-grid .publication-card { padding: 1.2rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface); }
+.featured-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+.featured-grid .publication-card { padding: 1.5rem 0 0; border-top: 1px solid var(--line); }
 .featured-grid .publication-card h2 { font-size: 1.2rem; }
+.featured-grid .publication-card--lead { grid-column: 1 / -1; }
+.featured-grid .publication-card--lead h2 { max-width: 40ch; font-size: clamp(1.5rem, 3vw, 2rem); }
+.publication-card--lead > p, .publication-card--lead .publication-links { max-width: 72ch; }
 .career-section { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding-top: 2rem; border-top: 1px solid var(--line); }
 .career-list { margin: 0; padding-left: 1.25rem; }
 .career-list li + li { margin-top: .55rem; }
@@ -76,13 +79,16 @@ h2, h3 { line-height: 1.2; }
 
 .research-visual { min-width: 0; margin: 2.5rem 0; border-top: 1px solid var(--line); }
 .research-visual-role { margin: .75rem 0; color: var(--muted); font-size: .9rem; }
-.research-visual-plot { padding: clamp(.5rem, 2vw, 1.5rem); background: var(--surface); border: 1px solid var(--line); }
+.research-visual-plot { padding: clamp(.5rem, 2vw, 1.5rem); background: var(--surface); border: 1px solid var(--line); overflow-x: auto; }
+.research-visual-plot:focus-visible { outline: 3px solid var(--signal); outline-offset: 3px; }
+.research-visual-hint { display: none; }
 .research-visual picture, .research-visual img { display: block; }
 .research-visual img { width: 100%; height: auto; object-fit: contain; }
 .research-visual-caption { max-width: 72ch; overflow-wrap: anywhere; }
 .research-visual-caption p { margin: .65rem 0; }
 .research-visual-caption .research-visual-takeaway { margin-top: 1.2rem; color: var(--ink); font-size: clamp(1.1rem, 2vw, 1.35rem); font-weight: 650; line-height: 1.45; }
 .research-visual-source { color: var(--muted); font-size: .9rem; }
+.research-visual-access { max-width: 72ch; margin: -1rem 0 2.5rem; font-size: .95rem; }
 .research-sequence-frames [hidden] { display: none; }
 .research-sequence-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .5rem 1.75rem; margin: 1rem 0; padding-left: 1.5rem; color: var(--muted); font-size: .95rem; }
 .research-sequence-steps li { padding: .35rem .25rem; border-bottom: 2px solid var(--line); }
@@ -112,6 +118,9 @@ h2, h3 { line-height: 1.2; }
   .site-footer { flex-direction: column; padding: 1.25rem; }
   .research-sequence-steps { grid-template-columns: 1fr; }
   .research-sequence-controls { align-items: flex-start; flex-direction: column; }
+  .research-visual-hint { display: block; max-width: 72ch; color: var(--muted); font-size: .9rem; }
+  .publication-detail .research-visual-plot picture { min-width: 64rem; }
+  .publication-detail .research-visual-plot img[src$="cgd-accuracy.png"] { min-width: 90rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -125,6 +134,9 @@ h2, h3 { line-height: 1.2; }
   .site-main { width: 100%; min-height: 0; padding: 1rem 0; }
   a { color: inherit; }
   .research-visual { break-inside: avoid; }
+  .research-visual-hint { display: none; }
+  .research-visual-plot { overflow: visible; }
+  .publication-detail .research-visual-plot picture, .publication-detail .research-visual-plot img[src$="cgd-accuracy.png"] { min-width: 0; }
   .research-sequence-frames [data-sequence-frame] { display: none !important; }
   .research-sequence-frames [data-sequence-poster] { display: block !important; }
   .research-sequence-controls, .research-sequence-steps, .research-sequence-note { display: none !important; }
