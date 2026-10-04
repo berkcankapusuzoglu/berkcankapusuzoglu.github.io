@@ -6,7 +6,7 @@ figure_count: 234
 motion_count: 0
 source_policy: "Private outer and nested ZIPs remain outside Git; only reviewed derivatives are publishable."
 temporary_work_directory: "asset-work/"
-caption_policy: "Captions below are editorial summaries, not verbatim source captions. Source labels refer to archive TeX; verify final public numbering before publication."
+caption_policy: "caption is the selected public editorial summary; original_caption records the source caption. Approved entries were compared against the versioned paper; source_page is the extracted figure PDF page and paper_page is the published paper page."
 license_checks:
   checked_on: "2026-10-04"
   papers:
@@ -39,28 +39,56 @@ projects:
     figure_count: 3
     motion_count: 0
     status: selected
-    license: rights-review-required
+    license: "CC BY 4.0"
     source_url: "https://arxiv.org/abs/2511.08500"
-    reason: "Preferred Release 1 SPEAR-MM source; match presentation figures to the licensed preprint before publishing."
+    reason: "Both presentation figures visually match Figures 1 and 2 of the CC BY 4.0 arXiv v1 paper; reuse approved after comparison on 2026-10-04."
     selected_entries:
       - path: "SPEARMM_pipeline.pdf"
         sha256: "98cfaa86c35783210101d716a20f5f84c5b75f5b42cb699a234945fdd1db9110"
         source_label: "Presentation slide 4: SPEAR-MM: A Practical Framework"
-        source_figure_number: null
+        source_figure_number: 1
+        source_page: 1
+        paper_page: 2
+        paper_url: "https://arxiv.org/abs/2511.08500v1"
+        original_caption: "The SPEAR-MM Pipeline: (1) A base model is fine-tuned on financial data to create an adapted model. (2) Layer-wise SPEAR-MM scores are computed using SNR and change metrics from both models. (3) Parameters are grouped and ranked by their score. (4) A merge configuration is generated to create the final model, which is then (5) evaluated on validation sets to select the optimal configuration."
+        original_caption_source: "arXiv v1 Figure 1; presentation asset has no embedded caption."
+        output_path: "content/publications/2025-spear-mm/media/spear-pipeline.png"
+        output_sha256: "9689a7cf8bf5c0ef62a9cf2e90cef892cfa26354330ca34433c5370736f30038"
+        width: 1657
+        height: 1125
+        size_bytes: 151907
+        dpi: 320
+        crop: none
         caption: "SPEAR-MM evaluates layer importance and selectively restores parameters through spherical merging."
         role: lead
-        status: selected
-        license: rights-review-required
-        reason: "Explains the method; presentation provenance must be confirmed."
+        status: approved
+        license: "CC BY 4.0"
+        license_url: "https://creativecommons.org/licenses/by/4.0/"
+        attribution: "Berkcan Kapusuzoglu et al., SPEAR-MM (2025), Figure 1, CC BY 4.0. Rasterized without scientific edits."
+        reason: "Matches the paper's five numbered steps, model symbols, colored nodes, fine-tuning and merge_config.yaml labels, and all arrow routes. No clipping, broken glyphs or excess page whitespace."
       - path: "retention_vs_adaptation_tradeoff.pdf"
         sha256: "0abd1ea54fcae66c1d6624668b648e462a6688a22bec385fc717adfe343c1ad7"
         source_label: "Presentation slide 9: Results: Domain Performance vs. Retention"
-        source_figure_number: null
+        source_figure_number: 2
+        source_page: 1
+        paper_page: 3
+        paper_url: "https://arxiv.org/abs/2511.08500v1"
+        original_caption: "Domain Adaptation vs. Knowledge Retention Trade-off. The y-axis shows domain performance as a percentage of a non-adapted baseline. Our method enables precise control over the forgetting-learning balance, with each point representing a different freezing configuration. The resulting trade-off frontier is superior to that of the baselines."
+        original_caption_source: "arXiv v1 Figure 2; presentation asset has no embedded caption."
+        output_path: "content/publications/2025-spear-mm/media/retention-adaptation.png"
+        output_sha256: "bbaced6d60c95efe8c7dd055f7f96f7f2ffac02aa7a9546f429af04b93cb6838"
+        width: 1479
+        height: 1262
+        size_bytes: 91816
+        dpi: 220
+        crop: none
         caption: "Domain adaptation and retention of general capabilities form a controllable trade-off."
         role: result
-        status: selected
-        license: rights-review-required
-        reason: "Supports the adaptation-retention story; presentation provenance must be confirmed."
+        status: approved
+        license: "CC BY 4.0"
+        license_url: "https://creativecommons.org/licenses/by/4.0/"
+        attribution: "Berkcan Kapusuzoglu et al., SPEAR-MM (2025), Figure 2, CC BY 4.0. Rasterized without scientific edits."
+        reason: "Matches the paper's axes/ranges, three labeled SPEAR-MM settings, two square and two triangle baseline points, dashed links and Method legend. Baseline A/B are generic in the original; do not assign unverified method names. No clipping, unreadable labels, broken glyphs or excess page whitespace."
   - archive: "MESA_ODI_NeurIPS26.zip"
     publication_slug: "2026-load-balancing-expert-pruning"
     figure_count: 10
@@ -73,12 +101,27 @@ projects:
       - path: "figures/ppl_accuracy_scatter.pdf"
         sha256: "ce164291e0bafc6ccbcc7746c386ba03c1073dbc55b138de62de5707de6c7ed8"
         source_label: "sections/sec_appendix.tex: fig:ppl-scatter"
-        source_figure_number: null
+        source_figure_number: 2
+        source_page: 1
+        paper_page: 6
+        paper_url: "https://arxiv.org/abs/2609.04453v1"
+        original_caption: "WikiText-2 perplexity against task accuracy across the five pruning configurations at r=0.25, for GSM8K, MMLU, and GPQA-Diamond. The per-panel Spearman rho is shown inset; the correlation is positive or near zero, rather than the negative correlation expected under normal routing."
+        original_caption_source: "Archive sections/sec_appendix.tex, fig:ppl-scatter; final paper moves the unchanged visual to Figure 2 in the main text."
+        paper_caption: "PPL vs task accuracy across three benchmarks at r = 0.25. Each point is one pruning method. The expected negative correlation (lower PPL = better accuracy) does not hold: rho is positive on GSM8K and MMLU and near zero on GPQA, confirming PPL is uninformative or misleading for method comparison in over-dispersed models."
+        output_path: "content/publications/2026-load-balancing-expert-pruning/media/ppl-accuracy.png"
+        output_sha256: "5c5b3c6c85314edaff2941492d83448cc7ec65cd331a9f1203c1694075b987d9"
+        width: 2156
+        height: 726
+        size_bytes: 89885
+        dpi: 220
+        crop: none
         caption: "Perplexity does not reliably predict task accuracy across pruning configurations under over-dispersed routing."
         role: lead
-        status: selected
+        status: approved
         license: "CC BY 4.0"
-        reason: "Makes the perplexity-versus-accuracy disconnect visible."
+        license_url: "https://creativecommons.org/licenses/by/4.0/"
+        attribution: "Berkcan Kapusuzoglu et al., When Load-Balancing Goes Too Far (2026), Figure 2, CC BY 4.0. Rasterized without scientific edits."
+        reason: "Matches paper Figure 2: all 15 points, three axes, five-method legend, rho values 0.70/0.30/-0.10 and p-values 0.160/0.828/0.981. No clipping, unreadable labels, broken glyphs or excess page whitespace; no confidence intervals exist in this source."
   - archive: "MultiLevel - Mitsubishi.zip"
     publication_slug: "2023_Kapusuzoglu_Journal_of_Computing_and_Information_Science_in_Engineering"
     figure_count: 16
@@ -156,17 +199,45 @@ projects:
         sha256: "c44af45ce659d37726beeca297f6a9e3d5b05af4377d212608c78fbddac13206"
         source_label: "sections/intro.tex: fig:cgd_overview"
         source_figure_number: 1
+        source_page: 1
+        paper_page: 2
+        paper_url: "https://arxiv.org/abs/2505.11628v4"
+        original_caption: "Overview of Critique-Guided Distillation (CGD). (1) A prompt is sampled. (2) The student generates an initial response. (3) The teacher produces a critique identifying errors and (4) a refined answer. The student is fine-tuned to map (prompt, student answer, critique) to refined answer. At inference, only the prompt is provided, and the model directly outputs refined answers in one pass."
+        original_caption_source: "Archive sections/intro.tex, fig:cgd_overview; macros expanded and math arrow written as prose."
+        output_path: "content/publications/2026-critique-guided-distillation/media/cgd-overview.png"
+        output_sha256: "f61bfc4945e5deff0029bcddbaf39e444827479850e908569969673624dedc8a"
+        width: 2200
+        height: 1238
+        size_bytes: 355843
+        dpi: 220
+        crop: none
         caption: "A student learns from teacher critiques and refined answers during training, then answers without a teacher at inference."
         role: lead
-        status: selected
+        status: approved
         license: "CC BY 4.0"
-        reason: "Explains the training-to-inference story on the homepage and paper page."
+        license_url: "https://creativecommons.org/licenses/by/4.0/"
+        attribution: "Berkcan Kapusuzoglu et al., Critique-Guided Distillation (2026), Figure 1, CC BY 4.0. Rasterized without scientific edits."
+        reason: "Matches paper Figure 1: three training steps, four numbered elements, teacher/student paths, formulas and nitride example. No clipping, broken glyphs or excess outer whitespace. Internal whitespace separates the source workflow and is preserved. Inference behavior is described by the caption, not a fourth diagram step."
       - path: "figures/accuracy_combined.pdf"
         sha256: "e5b501cbf3ac5782cd860090d1e48f2f758384a10853ce75c2475176bce7de91"
         source_label: "sections/intro.tex: fig:result"
         source_figure_number: 2
+        source_page: 1
+        paper_page: 3
+        paper_url: "https://arxiv.org/abs/2505.11628v4"
+        original_caption: "Performance of CGD on LLaMA3.1-8B Instruct. A LLaMA3.3-70B Instruct teacher provides critiques and refined answers for 100K WebInstruct samples. The student is trained to map from (prompt, initial answer, critique) to refined answer. CGD outperforms Distilled SFT and Critique Fine-Tuning (CFT), demonstrating the benefit of training models to act on critiques rather than generate them."
+        original_caption_source: "Archive sections/intro.tex, fig:result; method-name macro expanded and math arrow written as prose."
+        output_path: "content/publications/2026-critique-guided-distillation/media/cgd-accuracy.png"
+        output_sha256: "c845af8a194d788644a1b6580ee189cf5908fb4bf4aef45f9e49126d3a5922b4"
+        width: 4339
+        height: 1280
+        size_bytes: 175439
+        dpi: 220
+        crop: none
         caption: "CGD improves LLaMA3.1-8B reasoning performance compared with distilled SFT and critique fine-tuning."
         role: result
-        status: selected
+        status: approved
         license: "CC BY 4.0"
-        reason: "Supports the method explanation with the combined accuracy result."
+        license_url: "https://creativecommons.org/licenses/by/4.0/"
+        attribution: "Berkcan Kapusuzoglu et al., Critique-Guided Distillation (2026), Figure 2, CC BY 4.0. Rasterized without scientific edits."
+        reason: "Matches paper Figure 2: six task groups, five-method legend, all 30 bars/value labels and CGD hatching. No clipping or broken glyphs; axes and legend are readable at 1440 px. Nearby value labels touch in MATH500, TheoremQA, GPQA and MMLU-PRO as in the source; retain full-resolution access. Plot-area whitespace reflects the common y-axis range and is preserved. No confidence intervals exist in this source."

@@ -6,11 +6,15 @@ import hashlib
 import io
 import json
 from pathlib import Path, PurePosixPath
+import shutil
+import subprocess
+import tempfile
 import zipfile
 
 
 STATIC_EXTENSIONS = {'.pdf', '.png', '.jpg', '.jpeg', '.svg', '.eps', '.ps', '.webp', '.tif', '.tiff'}
 MOTION_EXTENSIONS = {'.gif', '.mp4', '.webm'}
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 @dataclass(frozen=True)
@@ -85,6 +89,61 @@ def select_entry(archive: Path, project_name: str, entry_name: str,
     return destination
 
 
+def prepare_figure(archive: Path, project_name: str, entry_name: str,
+                   output: Path, dpi: int = 180, replace: bool = False,
+                   page: int = 1) -> dict:
+    """Render one selected PDF page; publish only a validated PNG derivative."""
+    output = Path(output).resolve()
+    publications = (REPOSITORY_ROOT / 'content/publications').resolve()
+    if not output.is_relative_to(publications) or output.suffix.lower() != '.png':
+        raise ValueError('Output must be a PNG inside content/publications/')
+    if not 72 <= dpi <= 600:
+        raise ValueError('DPI must be between 72 and 600')
+    if page < 1:
+        raise ValueError('Page must be a positive integer')
+    if PurePosixPath(_safe_path(entry_name)).suffix.lower() != '.pdf':
+        raise ValueError('Preparation requires a PDF source')
+    if output.exists() and not replace:
+        raise FileExistsError(f'Output already exists; use --replace: {output}')
+    poppler = shutil.which('pdftoppm')
+    if poppler is None:
+        raise FileNotFoundError('pdftoppm is required; add Poppler to PATH')
+    # Inventory and extraction remain standard-library-only.
+    from PIL import Image
+
+    with tempfile.TemporaryDirectory(prefix='research-figure-') as temporary:
+        work = Path(temporary)
+        source = select_entry(archive, project_name, entry_name, work / 'source.pdf')
+        source_checksum = archive_sha256(source)
+        prefix = work / 'render'
+        command = [poppler, '-singlefile', '-png', '-r', str(dpi),
+                   '-f', str(page), '-l', str(page), str(source), str(prefix)]
+        subprocess.run(command, check=True, capture_output=True, text=True)
+        rendered = prefix.with_suffix('.png')
+        if not rendered.is_file():
+            raise FileNotFoundError('Poppler did not create the selected page PNG')
+        with Image.open(rendered) as image:
+            image.load()
+            width, height = image.size
+            if image.format != 'PNG' or width < 1 or height < 1:
+                raise ValueError('Poppler output must be a nonempty PNG')
+        result = {'project': project_name, 'entry': entry_name,
+                  'output': str(output), 'source_sha256': source_checksum,
+                  'source_page': page, 'dpi': dpi, 'width': width, 'height': height,
+                  'size_bytes': rendered.stat().st_size, 'sha256': archive_sha256(rendered)}
+        output.parent.mkdir(parents=True, exist_ok=True)
+        # Stage in the publication directory so the PNG inherits public file ACLs,
+        # rather than retaining the private temporary-directory ACL on Windows.
+        with tempfile.NamedTemporaryFile(dir=output.parent, suffix='.png', delete=False) as staging:
+            staged = Path(staging.name)
+        try:
+            shutil.copyfile(rendered, staged)
+            staged.replace(output)
+        finally:
+            staged.unlink(missing_ok=True)
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -95,6 +154,14 @@ def main() -> None:
     extract.add_argument('--project', required=True)
     extract.add_argument('--entry', required=True)
     extract.add_argument('--output', type=Path, required=True)
+    prepare = commands.add_parser('prepare')
+    prepare.add_argument('--archive', type=Path, required=True)
+    prepare.add_argument('--project', required=True)
+    prepare.add_argument('--entry', required=True)
+    prepare.add_argument('--output', type=Path, required=True)
+    prepare.add_argument('--dpi', type=int, default=180)
+    prepare.add_argument('--page', type=int, default=1)
+    prepare.add_argument('--replace', action='store_true')
     args = parser.parse_args()
     try:
         checksum = archive_sha256(args.archive)
@@ -104,11 +171,17 @@ def main() -> None:
                       'figure_count': sum(p.figure_count for p in projects),
                       'motion_count': sum(p.motion_count for p in projects),
                       'projects': [asdict(project) for project in projects]}
-        else:
+        elif args.command == 'extract':
             output = select_entry(args.archive, args.project, args.entry, args.output)
             result = {'archive_sha256': checksum, 'project': args.project,
                       'entry': args.entry, 'output': str(output), 'sha256': archive_sha256(output)}
-    except (OSError, KeyError, ValueError, zipfile.BadZipFile) as error:
+        else:
+            result = {'archive_sha256': checksum, **prepare_figure(
+                args.archive, args.project, args.entry, args.output,
+                dpi=args.dpi, replace=args.replace, page=args.page)}
+    except subprocess.CalledProcessError as error:
+        parser.exit(1, f'Poppler failed: {error.stderr or error}\n')
+    except (OSError, KeyError, ValueError, ImportError, zipfile.BadZipFile) as error:
         parser.exit(1, f'{error}\n')
     # JSON is a YAML 1.2 subset: standard-library-only and deterministic quoting.
     print(json.dumps(result, indent=2, ensure_ascii=True))

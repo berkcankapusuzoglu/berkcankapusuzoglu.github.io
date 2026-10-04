@@ -7,7 +7,9 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
+from scripts import research_assets
 from scripts.research_assets import inventory_archive, select_entry
 
 
@@ -111,6 +113,118 @@ class ResearchAssetsTests(unittest.TestCase):
         self.assertEqual(json.loads(result.stdout)['sha256'],
                          'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad')
         self.assertEqual(destination.read_bytes(), b'abc')
+
+    def prepare(self, **options):
+        self.assertTrue(callable(getattr(research_assets, 'prepare_figure', None)),
+                        'PDF preparation is not implemented')
+        with patch.object(research_assets, 'REPOSITORY_ROOT', self.root):
+            return research_assets.prepare_figure(
+                self.archive, 'A project.zip', 'figures/a.pdf',
+                options.pop('output', self.root / 'content/publications/paper/media/figure.png'),
+                **options)
+
+    def render_png(self, command, **options):
+        # Poppler is external; keep real extraction, validation and PNG decoding.
+        from PIL import Image
+        self.assertIsInstance(command, list)
+        self.assertEqual(command[0:5], ['pdftoppm', '-singlefile', '-png', '-r', '180'])
+        self.assertEqual(options, {'check': True, 'capture_output': True, 'text': True})
+        self.assertEqual(Path(command[-2]).read_bytes(), b'abc')
+        self.render_temp = Path(command[-2]).parent
+        Image.new('RGB', (32, 24), 'white').save(command[-1] + '.png')
+
+    def test_prepare_safe_poppler_arguments_and_source_metadata(self):
+        with patch('shutil.which', return_value='pdftoppm'), \
+                patch('subprocess.run', side_effect=self.render_png):
+            result = self.prepare()
+        self.assertEqual((result['width'], result['height'], result['source_page']), (32, 24, 1))
+        self.assertEqual(result['source_sha256'],
+                         'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad')
+        self.assertTrue(Path(result['output']).is_file())
+        self.assertFalse(self.render_temp.exists())
+
+    def test_prepare_rejects_outputs_outside_publication_tree(self):
+        for output in (self.root / 'figure.png',
+                       self.root / 'content/publications/../figure.png',
+                       self.root / 'content/publications/paper/figure.pdf'):
+            with self.subTest(output=output), self.assertRaises(ValueError):
+                self.prepare(output=output)
+        self.assertFalse((self.root / 'content').exists())
+
+    def test_prepare_rejects_invalid_dpi_and_page(self):
+        for dpi in (0, 71, 601, -180):
+            with self.subTest(dpi=dpi), self.assertRaises(ValueError):
+                self.prepare(dpi=dpi)
+        with self.assertRaises(ValueError):
+            self.prepare(page=0)
+
+    def test_prepare_missing_poppler_is_actionable_and_creates_no_output(self):
+        with patch('shutil.which', return_value=None), self.assertRaisesRegex(
+                FileNotFoundError, 'pdftoppm'):
+            self.prepare()
+        self.assertFalse((self.root / 'content').exists())
+
+    def test_prepare_missing_render_is_rejected_and_temp_is_removed(self):
+        def no_output(command, **options):
+            self.render_temp = Path(command[-2]).parent
+        with patch('shutil.which', return_value='pdftoppm'), \
+                patch('subprocess.run', side_effect=no_output), self.assertRaises(FileNotFoundError):
+            self.prepare()
+        self.assertFalse(self.render_temp.exists())
+        self.assertFalse((self.root / 'content').exists())
+
+    def test_prepare_poppler_error_preserves_destination_and_cleans_temp(self):
+        def fail(command, **options):
+            self.render_temp = Path(command[-2]).parent
+            raise subprocess.CalledProcessError(1, command, stderr='bad PDF')
+        with patch('shutil.which', return_value='pdftoppm'), \
+                patch('subprocess.run', side_effect=fail), self.assertRaises(subprocess.CalledProcessError):
+            self.prepare()
+        self.assertFalse(self.render_temp.exists())
+        self.assertFalse((self.root / 'content').exists())
+
+    def test_prepare_requires_replace_for_existing_output(self):
+        output = self.root / 'content/publications/paper/media/figure.png'
+        output.parent.mkdir(parents=True)
+        output.write_bytes(b'keep me')
+        with self.assertRaises(FileExistsError):
+            self.prepare()
+        self.assertEqual(output.read_bytes(), b'keep me')
+        with patch('shutil.which', return_value='pdftoppm'), \
+                patch('subprocess.run', side_effect=self.render_png):
+            self.prepare(replace=True)
+        self.assertTrue(output.read_bytes().startswith(b'\x89PNG'))
+
+    def test_prepare_explicit_page_is_passed_to_poppler(self):
+        def render_page(command, **options):
+            self.assertEqual(command[5:9], ['-f', '2', '-l', '2'])
+            self.render_png(command, **options)
+        with patch('shutil.which', return_value='pdftoppm'), \
+                patch('subprocess.run', side_effect=render_page):
+            self.assertEqual(self.prepare(page=2)['source_page'], 2)
+
+    def test_prepare_invalid_png_is_rejected(self):
+        def bad_png(command, **options):
+            self.render_temp = Path(command[-2]).parent
+            Path(command[-1] + '.png').write_bytes(b'not an image')
+        with patch('shutil.which', return_value='pdftoppm'), \
+                patch('subprocess.run', side_effect=bad_png), self.assertRaises(OSError):
+            self.prepare()
+        self.assertFalse(self.render_temp.exists())
+        self.assertFalse((self.root / 'content').exists())
+
+    def test_prepare_failed_publication_copy_preserves_existing_asset(self):
+        output = self.root / 'content/publications/paper/media/figure.png'
+        output.parent.mkdir(parents=True)
+        output.write_bytes(b'keep me')
+        with patch('shutil.which', return_value='pdftoppm'), \
+                patch('subprocess.run', side_effect=self.render_png), \
+                patch('shutil.copyfile', side_effect=OSError('copy failed')), \
+                self.assertRaises(OSError):
+            self.prepare(replace=True)
+        self.assertEqual(output.read_bytes(), b'keep me')
+        self.assertEqual(list(output.parent.iterdir()), [output])
+        self.assertFalse(self.render_temp.exists())
 
 
 if __name__ == '__main__':
