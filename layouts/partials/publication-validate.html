@@ -1,4 +1,5 @@
 {{ $page := . }}
+{{ partial "research-visual-validate.html" $page }}
 {{ range $field := slice "title" "date" "authors" "status" "summary" "contribution" }}
   {{ if not (index $page.Params $field) }}{{ errorf "Publication %s missing required field %s" $page.File.Path $field }}{{ end }}
 {{ end }}

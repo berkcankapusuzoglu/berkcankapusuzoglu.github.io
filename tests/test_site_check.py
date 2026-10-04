@@ -5,6 +5,7 @@ import unittest
 import re
 import json
 import html
+import shutil
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -37,6 +38,35 @@ class SiteCheckTests(unittest.TestCase):
         (self.root / 'index.json').touch()
         self.assertEqual(collect_html_routes(self.root),
                          {'/', '/path/file.html', '/path/index.html'})
+
+    def test_research_figure_contract(self):
+        valid = '<figure data-research-visual><img src="result.png" alt="Accuracy comparison" width="640" height="480"><figcaption>Accuracy improves.</figcaption></figure>'
+        self.assertEqual(self.document('<main><h1>A</h1>' + valid + '</main>'), [])
+        cases = (
+            (valid.replace('result.png', 'https://example.org/result.png'), 'Research figure uses nonlocal image'),
+            (valid.replace('result.png', '//example.org/result.png'), 'Research figure uses nonlocal image'),
+            (valid.replace('result.png', 'data:image/png;base64,AA'), 'Research figure uses nonlocal image'),
+            (valid.replace('<figcaption>Accuracy improves.</figcaption>', ''), 'Research figure missing useful figcaption'),
+            (valid.replace('Accuracy improves.', ' '), 'Research figure missing useful figcaption'),
+            (valid.replace(' width="640"', ''), 'Research image missing intrinsic dimensions'),
+            (valid.replace('height="480"', 'height="0"'), 'Research image missing intrinsic dimensions'),
+            (valid.replace('alt="Accuracy comparison"', 'alt="" aria-hidden="true"'), 'Research image missing useful alt text'),
+        )
+        for body, expected in cases:
+            with self.subTest(body=body):
+                self.assertTrue(any(expected in error for error in self.document('<main><h1>A</h1>' + body + '</main>')))
+
+    def test_sequence_requires_accessible_control_button(self):
+        for control in ('', '<a href="#">Play</a>', '<button></button>', '<button hidden>Play</button>'):
+            with self.subTest(control=control):
+                self.assertIn('Research sequence missing accessible control button', self.document(
+                    '<main><h1>A</h1><div data-research-sequence>' + control + '</div></main>'))
+        self.assertEqual(self.document('<main><h1>A</h1><div data-research-sequence><button>Play</button></div></main>'), [])
+
+    def test_homepage_rejects_multiple_selected_research_visuals(self):
+        path = self.root / 'index.html'
+        path.write_text('<main><h1>A</h1><figure data-research-visual data-research-homepage="true"><figcaption>First</figcaption></figure><figure data-research-visual data-research-homepage="true"><figcaption>Second</figcaption></figure></main>', encoding='utf-8')
+        self.assertIn('Homepage has more than one selected research visual', validate_html_document(path, '/'))
 
     def test_missing_legacy_route_is_reported(self):
         expected = self.root / 'urls.txt'
@@ -213,6 +243,108 @@ class SiteCheckTests(unittest.TestCase):
                 result = self.run_cli(shell, css=css)
                 self.assertEqual(result.returncode, 1)
                 self.assertIn('Remote', result.stdout)
+
+
+class VisualMetadataTests(unittest.TestCase):
+    """Build real temporary publication bundles through the production validator."""
+
+    def test_generated_homepage_rejects_selection_across_featured_publications(self):
+        repo = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            layouts = root / 'layouts'
+            shutil.copytree(repo / 'layouts', layouts)
+            # Task 2 validates metadata; rendering ships later. Expose the featured
+            # selection with the agreed HTML markers in this fixture homepage.
+            (layouts / 'index.html').write_text(
+                '<main><h1>Fixture homepage</h1>{{ range partial "featured-publications.html" . }}'
+                '{{ range .Params.visuals }}{{ if .homepage }}'
+                '<figure data-research-visual data-research-homepage="true">'
+                '<img src="result.svg" alt="Comparison" width="10" height="10">'
+                '<figcaption>{{ .caption }}</figcaption></figure>{{ end }}{{ end }}{{ end }}</main>',
+                encoding='utf-8')
+            for index in (1, 2):
+                bundle = root / 'content/publications' / f'featured-{index}'
+                bundle.mkdir(parents=True)
+                metadata = dict(title=f'Featured {index}', date='2026-01-01', authors=['Author'],
+                                venue=dict(name='Test venue', type='preprint'), status='preprint',
+                                summary='A publication.', contribution='An insight.', topics=[], links=[],
+                                featured=True, featured_weight=index,
+                                visuals=[dict(self.visual(), homepage=True)])
+                (bundle / 'index.md').write_text(json.dumps(metadata), encoding='utf-8')
+                (bundle / 'result.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>', encoding='utf-8')
+            public = root / 'public'
+            result = subprocess.run(['hugo', '--contentDir', str(root / 'content'), '--layoutDir',
+                                     str(layouts), '--destination', str(public), '--panicOnWarning'],
+                                    cwd=repo, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn('Homepage has more than one selected research visual',
+                          validate_html_document(public / 'index.html', '/'))
+
+    def build_visuals(self, visuals):
+        repo = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle = root / 'content/publications/contract-fixture'
+            bundle.mkdir(parents=True)
+            metadata = dict(title='Contract fixture', date='2026-01-01', authors=['Author'],
+                            venue=dict(name='Test venue', type='preprint'), status='preprint',
+                            summary='A test publication.', contribution='A test contribution.', topics=[], links=[])
+            if visuals is not None:
+                metadata['visuals'] = visuals
+            (bundle / 'index.md').write_text(json.dumps(metadata) + '\nFixture body.', encoding='utf-8')
+            (bundle / 'result.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>', encoding='utf-8')
+            return subprocess.run(['hugo', '--contentDir', str(root / 'content'),
+                                   '--destination', str(root / 'public'), '--panicOnWarning'],
+                                  cwd=repo, capture_output=True, text=True)
+
+    def visual(self):
+        return dict(id='accuracy', file='result.svg', role='result', alt='Accuracy comparison',
+                    caption='Accuracy improves.', takeaway='The model improves accuracy.',
+                    source_label='Paper figure 1', source_url='https://example.org/paper',
+                    license='CC BY 4.0')
+
+    def test_legacy_and_complete_visuals_build(self):
+        for visuals in (None, [], [self.visual()], [dict(self.visual(), sequence=[
+                dict(label='Before', file='result.svg'), dict(label='After', file='result.svg')])]):
+            with self.subTest(visuals=visuals):
+                result = self.build_visuals(visuals)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_visual_required_fields_are_rejected(self):
+        for field in ('id', 'file', 'role', 'alt', 'caption', 'takeaway', 'source_label', 'source_url', 'license'):
+            for value in (None, ' '):
+                with self.subTest(field=field, value=value):
+                    visual = self.visual()
+                    if value is None:
+                        del visual[field]
+                    else:
+                        visual[field] = value
+                    result = self.build_visuals([visual])
+                    self.assertNotEqual(result.returncode, 0, 'Incomplete visual unexpectedly built')
+                    self.assertIn('contract-fixture/index.md', (result.stdout + result.stderr).replace('\\', '/'))
+                    self.assertIn(field, result.stdout + result.stderr)
+
+    def test_visual_rejects_invalid_resources_roles_ids_and_sequences(self):
+        cases = (
+            [dict(self.visual(), file='https://example.org/result.svg')],
+            [dict(self.visual(), file='//example.org/result.svg')],
+            [dict(self.visual(), file='missing.svg')],
+            [self.visual(), self.visual()],
+            [dict(self.visual(), role='decorative')],
+            [dict(self.visual(), sequence=[])],
+            [dict(self.visual(), sequence=[dict(label='First', file='result.svg')])],
+            [dict(self.visual(), sequence=[dict(file='result.svg'), dict(label='Last', file='result.svg')])],
+            [dict(self.visual(), sequence=[dict(label='First'), dict(label='Last', file='result.svg')])],
+            [dict(self.visual(), sequence=[dict(label='First', file='https://example.org/frame.svg'), dict(label='Last', file='result.svg')])],
+            [dict(self.visual(), sequence=[dict(label='First', file='missing.svg'), dict(label='Last', file='result.svg')])],
+        )
+        for visuals in cases:
+            with self.subTest(visuals=visuals):
+                result = self.build_visuals(visuals)
+                self.assertNotEqual(result.returncode, 0, 'Invalid visual unexpectedly built')
+                self.assertIn('contract-fixture/index.md', (result.stdout + result.stderr).replace('\\', '/'))
+                self.assertIn('accuracy', result.stdout + result.stderr)
 
 
 class GeneratedShellTests(unittest.TestCase):

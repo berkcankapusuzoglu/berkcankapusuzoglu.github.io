@@ -129,6 +129,17 @@ def _accessible_name(node, ids):
     return _accessible_text(node)
 
 
+def _descendants(node):
+    for child in node['children']:
+        if isinstance(child, dict):
+            yield child
+            yield from _descendants(child)
+
+
+def _research_marker(node, attribute, css_class):
+    return attribute in node['attrs'] or css_class in node['attrs'].get('class', '').split()
+
+
 def validate_html_document(path: Path, route: str | None = None) -> list[str]:
     document = _Document()
     document.feed(path.read_text(encoding='utf-8'))
@@ -145,6 +156,39 @@ def validate_html_document(path: Path, route: str | None = None) -> list[str]:
         errors.append('Missing main landmark')
     ids = {node['attrs']['id']: node for node in document.nodes
            if node['attrs'].get('id') and not node['in_template']}
+    figures = [node for node in document.nodes if node['tag'] == 'figure' and
+               not node['in_template'] and
+               _research_marker(node, 'data-research-visual', 'research-visual')]
+    if route == '/' and sum(node['attrs'].get('data-research-homepage') == 'true'
+                            for node in figures) > 1:
+        errors.append('Homepage has more than one selected research visual')
+    for figure in figures:
+        descendants = list(_descendants(figure))
+        if not any(node['tag'] == 'figcaption' and _accessible_text(node).strip()
+                   for node in descendants):
+            errors.append('Research figure missing useful figcaption')
+        for node in descendants:
+            if node['tag'] != 'img':
+                continue
+            attrs = node['attrs']
+            src = attrs.get('src', '').strip()
+            sources = [src] + [candidate.strip().split()[0] for candidate in
+                               attrs.get('srcset', '').split(',') if candidate.strip()]
+            if any(not source or urlparse(source).scheme or urlparse(source).netloc
+                   for source in sources):
+                errors.append(f'Research figure uses nonlocal image: {src}')
+            if not attrs.get('alt', '').strip():
+                errors.append(f'Research image missing useful alt text: {src}')
+            if not all(re.fullmatch(r'[1-9][0-9]*', attrs.get(dimension, ''))
+                       for dimension in ('width', 'height')):
+                errors.append(f'Research image missing intrinsic dimensions: {src}')
+    for node in document.nodes:
+        if node['in_template'] or not _research_marker(node, 'data-research-sequence', 'research-sequence'):
+            continue
+        if not any(child['tag'] == 'button' and not child['hidden'] and
+                   not child['in_template'] and _accessible_name(child, ids).strip()
+                   for child in _descendants(node)):
+            errors.append('Research sequence missing accessible control button')
     for heading in headings:
         if not _accessible_name(heading, ids).strip():
             errors.append('H1 missing accessible text')

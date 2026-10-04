@@ -1,0 +1,39 @@
+{{ $page := . }}
+{{ $ids := slice }}
+{{ range $visual := $page.Params.visuals }}
+  {{ $id := $visual.id | default "(missing id)" }}
+  {{ range $field := slice "id" "file" "role" "alt" "caption" "takeaway" "source_label" "source_url" "license" }}
+    {{ if not (strings.TrimSpace (printf "%v" (index $visual $field | default ""))) }}
+      {{ errorf "Publication %s visual %s missing required field %s" $page.File.Path $id $field }}
+    {{ end }}
+  {{ end }}
+  {{ if in $ids $id }}{{ errorf "Publication %s has duplicate visual id %s" $page.File.Path $id }}{{ end }}
+  {{ $ids = $ids | append $id }}
+  {{ if not (in (slice "lead" "result" "supporting") $visual.role) }}
+    {{ errorf "Publication %s visual %s has invalid role" $page.File.Path $id }}
+  {{ end }}
+  {{ with $visual.file }}
+    {{ if or (strings.HasPrefix . "/") (gt (len (findRE `^[a-zA-Z][a-zA-Z0-9+.-]*:` .)) 0) }}
+      {{ errorf "Publication %s visual %s file must be a local page resource: %s" $page.File.Path $id . }}
+    {{ else if not ($page.Resources.GetMatch .) }}
+      {{ errorf "Publication %s visual %s missing page resource: %s" $page.File.Path $id . }}
+    {{ end }}
+  {{ end }}
+  {{ if isset $visual "sequence" }}
+    {{ if lt (len $visual.sequence) 2 }}
+      {{ errorf "Publication %s visual %s sequence requires at least two frames" $page.File.Path $id }}
+    {{ end }}
+    {{ range $index, $frame := $visual.sequence }}
+      {{ if not (strings.TrimSpace ($frame.label | default "")) }}
+        {{ errorf "Publication %s visual %s sequence frame %d missing label" $page.File.Path $id $index }}
+      {{ end }}
+      {{ if not (strings.TrimSpace ($frame.file | default "")) }}
+        {{ errorf "Publication %s visual %s sequence frame %d missing file" $page.File.Path $id $index }}
+      {{ else if or (strings.HasPrefix $frame.file "/") (gt (len (findRE `^[a-zA-Z][a-zA-Z0-9+.-]*:` $frame.file)) 0) }}
+        {{ errorf "Publication %s visual %s sequence frame %d file must be a local page resource" $page.File.Path $id $index }}
+      {{ else if not ($page.Resources.GetMatch $frame.file) }}
+        {{ errorf "Publication %s visual %s sequence frame %d missing page resource: %s" $page.File.Path $id $index $frame.file }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
