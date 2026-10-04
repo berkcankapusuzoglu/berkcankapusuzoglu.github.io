@@ -168,15 +168,17 @@ def validate_html_document(path: Path, route: str | None = None) -> list[str]:
                    for node in descendants):
             errors.append('Research figure missing useful figcaption')
         for node in descendants:
-            if node['tag'] != 'img':
+            if node['tag'] not in {'img', 'source'}:
                 continue
             attrs = node['attrs']
             src = attrs.get('src', '').strip()
-            sources = [src] + [candidate.strip().split()[0] for candidate in
+            sources = ([src] if node['tag'] == 'img' or src else []) + [candidate.strip().split()[0] for candidate in
                                attrs.get('srcset', '').split(',') if candidate.strip()]
             if any(not source or urlparse(source).scheme or urlparse(source).netloc
                    for source in sources):
-                errors.append(f'Research figure uses nonlocal image: {src}')
+                errors.append(f"Research figure uses nonlocal image: {src or attrs.get('srcset', '')}")
+            if node['tag'] == 'source':
+                continue
             if not attrs.get('alt', '').strip():
                 errors.append(f'Research image missing useful alt text: {src}')
             if not all(re.fullmatch(r'[1-9][0-9]*', attrs.get(dimension, ''))

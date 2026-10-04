@@ -63,6 +63,21 @@ class SiteCheckTests(unittest.TestCase):
                     '<main><h1>A</h1><div data-research-sequence>' + control + '</div></main>'))
         self.assertEqual(self.document('<main><h1>A</h1><div data-research-sequence><button>Play</button></div></main>'), [])
 
+    def test_research_picture_sources_must_use_local_candidates(self):
+        for srcset in ('https://example.org/result.webp 1x', '//example.org/result.webp 1x',
+                       'local.webp 1x, https://example.org/result-2x.webp 2x',
+                       'data:image/webp;base64,AA'):
+            with self.subTest(srcset=srcset):
+                errors = self.document('<main><h1>A</h1><figure data-research-visual><picture>'
+                    f'<source type="image/webp" srcset="{srcset}">'
+                    '<img src="result.png" alt="Accuracy comparison" width="640" height="480">'
+                    '</picture><figcaption>Accuracy improves.</figcaption></figure></main>')
+                self.assertTrue(any('Research figure uses nonlocal image' in error for error in errors))
+        self.assertEqual(self.document('<main><h1>A</h1><figure data-research-visual><picture>'
+            '<source type="image/webp" srcset="result.webp 1x, result-2x.webp 2x">'
+            '<img src="result.png" alt="Accuracy comparison" width="640" height="480">'
+            '</picture><figcaption>Accuracy improves.</figcaption></figure></main>'), [])
+
     def test_homepage_rejects_multiple_selected_research_visuals(self):
         path = self.root / 'index.html'
         path.write_text('<main><h1>A</h1><figure data-research-visual data-research-homepage="true"><figcaption>First</figcaption></figure><figure data-research-visual data-research-homepage="true"><figcaption>Second</figcaption></figure></main>', encoding='utf-8')
