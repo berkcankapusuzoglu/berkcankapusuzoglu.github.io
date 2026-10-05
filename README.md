@@ -6,6 +6,8 @@ This repository builds the public portfolio with Hugo 0.145.0. The production bu
 
 - Git
 - Hugo Extended 0.145.0
+- Python 3.13 with Pillow for visual preparation and the full Python test suite; inventory and extraction use only the standard library
+- Poppler's `pdftoppm` on `PATH` for PDF preparation
 - Node.js 22 or newer only when running the Pa11y accessibility check
 
 Install the Hugo Extended 0.145.0 release for your operating system from the [Hugo releases page](https://github.com/gohugoio/hugo/releases/tag/v0.145.0). Add the extracted `hugo` executable to `PATH`, then confirm `hugo version` reports `v0.145.0` and `extended`.
@@ -56,15 +58,19 @@ contribution: "What the work contributes and Berkcan's role."
 ---
 ```
 
-The required fields are `title`, `date`, `authors`, `venue.name`, `venue.type`, `status`, `summary`, and `contribution`. Links and topics are optional. Use a specific link label and a first-party proceedings, publisher, DOI, arXiv, or OpenReview URL. Set `featured: true` to show a paper on the homepage. Smaller `featured_weight` values appear first; use the next available number to choose its position.
+The required fields are `title`, `date`, `authors`, `venue.name`, `venue.type`, `status`, `summary`, and `contribution`. The templates require `topics` and `links` lists even when empty; the release tests expect published papers to have a topic and a canonical paper link. Use a specific link label and a first-party proceedings, publisher, DOI, arXiv, or OpenReview URL. Add a new publication's generated route to `tests/expected-urls.txt`; the tests compare the complete route set. Set `featured: true` to show a paper on the homepage. Smaller `featured_weight` values appear first; use the next available number to choose its position.
 
 ### Publish a Research Note
 
 Create `content/writing/<slug>/index.md` with a title, date, description, and the note text. Hugo lists these page bundles on the Research Notes page, newest first, with each title, date, and summary linked accessibly. Keep a note focused on a research question, an engineering lesson, or a useful reading note, and link to its supporting publication or source. After publishing, adapt the note's main point and one takeaway into a LinkedIn post, then link back to the full note. Do not publish confidential work details or unapproved metrics.
 
-Visual notes use the same `visuals` front matter as publications. Place one `{{< research-visual >}}` shortcode at each figure position, in metadata order. Without shortcodes, figures follow the prose. `linkedin.thesis`, `linkedin.takeaways`, and `linkedin.sharing` are structured editorial metadata; they are not rendered as keywords. LinkedIn adaptations link to the canonical note.
+Follow [Publishing a visual Research Note](docs/research/publishing-a-visual-note.md) for the note template, exact-pixel sequence recipe, figure placement and LinkedIn adaptation. Visual notes use the same `visuals` contract as publications.
 
-Prepare a sequence with `python scripts/research_assets.py sequence --source <approved.png> --recipe <recipe.yaml> --output-dir content/writing/<slug>/media`. Use the bundled Python with Pillow (inventory and extraction remain standard-library-only). Recipes use JSON syntax, a YAML 1.2 subset: a simple PNG `file` name and ordered `sequence` objects with a `label` and positive integer `duration` in milliseconds. Optional `focus` coordinates (`x`, `y`, `width`, `height`) are percentages within the whole image; optional `callout` is visible prose. The command validates and copies one PNG byte for byte, emits repeated local frame references and checksums, and refuses to overwrite an existing asset. Focus outlines and labels live in the DOM and CSS. Set `exact_pixels: true` on the sequence visual to load its original PNG directly. The CGD recipe is retained alongside its note; no scientific pixels are painted or cropped.
+### Five-minute visual update
+
+For an already reviewed source, follow [Adding a paper visual](docs/research/adding-a-paper-visual.md): inventory the private archive, prepare one named PDF page, add its metadata, preview, validate and commit. Rights review and figure comparison happen before this quick path. The guide includes copyable PowerShell commands and the image/accessibility checklist.
+
+Keep source ZIPs outside Git. Record provenance in [the inventory](docs/research/visual-inventory.yaml); use [the Release 2 backlog](docs/research/visual-release-2.md) to choose the next candidate. Pending figures need specific reuse evidence before preparation. CGD remains the sole homepage visual, and featured order remains CGD, expert pruning, SPEAR-MM.
 
 ### Replace the CV
 
@@ -81,10 +87,11 @@ python scripts/site_check.py --public public --expected tests/expected-urls.txt
 npm ci
 npm run check:a11y
 node --check scripts/check_a11y.mjs
+node --check assets/js/research-visuals.js
 git diff --check
 ```
 
-Pa11y CI checks the home, research, publications, a long-author paper, leadership, About, Research Notes, and 404 pages at desktop and mobile widths. It enforces WCAG 2.0 AA. CI installs the pinned Node tools; Node is not part of the Hugo production build.
+Pa11y CI checks the home, research, publications, a long-author paper, leadership, About, Research Notes, and 404 pages at desktop and mobile widths. It enforces WCAG 2.0 AA. CI installs the pinned Node tools; Node is not part of the Hugo production build. Use the Python interpreter with Pillow described in the visual guide; a standard-library-only interpreter cannot run all asset tests.
 
 ## Review and deployment
 
