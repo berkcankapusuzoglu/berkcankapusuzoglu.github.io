@@ -1266,6 +1266,49 @@ class GeneratedShellTests(unittest.TestCase):
                                     'Read the original on Medium' in _accessible_name(node, {})
                                     for node in document.nodes))
 
+    def test_medium_archive_local_links_resolve(self):
+        routes = (
+            'writing/physics-informed-machine-learning-additive-manufacturing.html',
+            'writing/uncertainty-quantification-sensitivity-analysis-part-i.html',
+            'writing/multi-objective-optimization-under-uncertainty.html',
+        )
+        for route in routes:
+            document = self.all_pages[route]
+            for node in document.nodes:
+                href = node['attrs'].get('href', '')
+                parsed = urlparse(href)
+                if (node['tag'] != 'a' or parsed.scheme or parsed.netloc or
+                        not parsed.path or href.startswith(('#', 'mailto:'))):
+                    continue
+                resolved = urlparse(urljoin('/' + route, href)).path
+                target = self.public / ('index.html' if resolved == '/' else resolved.lstrip('/'))
+                with self.subTest(route=route, href=href):
+                    self.assertTrue(target.is_file(), f'broken local link: {href}')
+
+    def test_homepage_metadata_comes_from_editable_content(self):
+        repo = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            content = root / 'content'
+            content.mkdir()
+            (content / '_index.md').write_text(
+                '---\ntitle: "Editable homepage title"\n'
+                'description: "An editable homepage description used for search and sharing."\n---\n',
+                encoding='utf-8')
+            destination = root / 'public'
+            result = subprocess.run(
+                ['hugo', '--contentDir', str(content), '--destination', str(destination),
+                 '--minify', '--panicOnWarning'], cwd=repo, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            document = _Document()
+            document.feed((destination / 'index.html').read_text(encoding='utf-8'))
+            title = next(node for node in document.nodes if node['tag'] == 'title')
+            description = next(node for node in document.nodes if node['tag'] == 'meta' and
+                               node['attrs'].get('name') == 'description')
+            self.assertEqual(_accessible_name(title, {}), 'Editable homepage title')
+            self.assertEqual(description['attrs'].get('content'),
+                             'An editable homepage description used for search and sharing.')
+
     def test_owner_editing_guide_and_blog_archetype_are_available(self):
         repo = Path(__file__).parents[1]
         readme = (repo / 'README.md').read_text(encoding='utf-8')

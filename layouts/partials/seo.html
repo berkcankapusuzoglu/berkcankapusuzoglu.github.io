@@ -1,9 +1,7 @@
 {{- $page := .Page -}}
 {{- $pageNumber := .PageNumber | default 1 -}}
 {{- $description := $page.Description | default $page.Summary | plainify | htmlUnescape | strings.TrimSpace -}}
-{{- if $page.IsHome -}}
-  {{- $description = "Berkcan Kapusuzoglu's research covers reasoning methods, efficient model systems, and trustworthy language model evaluation." -}}
-{{- else if lt (len $description) 40 -}}
+{{- if and (not $page.IsHome) (lt (len $description) 40) -}}
   {{- if $page.Params.venue.name -}}
     {{- $description = printf "%s by Berkcan Kapusuzoglu and coauthors. %s. %s" $page.Title $page.Params.venue.name ($page.Params.summary | default "Research on language models and efficient AI systems.") -}}
   {{- else -}}
@@ -13,7 +11,7 @@
 {{- $pageTitle := $page.Title -}}
 {{- if not $pageTitle -}}{{- $pageTitle = path.Base $page.RelPermalink | strings.TrimSuffix ".html" | humanize -}}{{- end -}}
 {{- $title := printf "%s - Berkcan Kapusuzoglu" $pageTitle -}}
-{{- if $page.IsHome -}}{{- $title = "Staff Applied Researcher - AI Foundations" -}}{{- end -}}
+{{- if $page.IsHome -}}{{- $title = $page.Title -}}{{- end -}}
 {{- if gt $pageNumber 1 -}}{{- $title = printf "%s (Page %d)" $title $pageNumber -}}{{- end -}}
 {{- $canonical := $page.Permalink -}}
 {{- if gt $pageNumber 1 -}}

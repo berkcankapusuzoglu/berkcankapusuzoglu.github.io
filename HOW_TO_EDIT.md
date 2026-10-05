@@ -18,6 +18,7 @@ Open <http://localhost:1313/>. Press `Ctrl+C` in the terminal to stop the server
 | --- | --- |
 | Homepage name, headline, bio, links, research themes, and proof points | `data/profile.yaml` |
 | Homepage browser title and description | `content/_index.md` |
+| Homepage section headings, supporting sentences, and button text | `layouts/index.html` |
 | About page | `content/about/_index.md` |
 | Navigation labels and order | `config/_default/menus.yaml` |
 | Publications | `content/publications/` |

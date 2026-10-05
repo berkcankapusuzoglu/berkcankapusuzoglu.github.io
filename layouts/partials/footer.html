@@ -1,5 +1,5 @@
 <footer class="site-footer">
-  <p>© {{ now.Year }} Berkcan Kapusuzoglu</p>
+  <p>© {{ now.Year }} {{ site.Data.profile.name }}</p>
   <ul class="social-links" aria-label="Professional links">
     {{ with .Page.Site.Params.email }}<li><a href="mailto:{{ . }}">Email</a></li>{{ end }}
     {{ with .Page.Site.Params.github }}<li><a href="{{ . }}">GitHub</a></li>{{ end }}

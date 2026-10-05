@@ -37,4 +37,4 @@ A damage-management workflow can combine probabilistic diagnosis, Bayesian updat
 
 Do not treat uncertainty as a single error bar added after prediction. Trace each source through the model, separate reducible knowledge gaps from inherent variability, and use sensitivity results to decide what to measure or improve next.
 
-Related publications include [*Information fusion and machine learning for sensitivity analysis using physics knowledge and experimental data*](/publications/2021_kapusuzoglu_reliability_engineering_system_safety.html) and [*Digital twin approach for intelligent operation planning and health management of mechanical systems*](/publications/2020_karve_annual_conference_of_the_phm_society.html).
+Related publications include [*Information fusion and machine learning for sensitivity analysis using physics knowledge and experimental data*](/publications/2021_kapusuzoglu_reliability_engineering__system_safety.html) and [*Digital twin approach for intelligent operation planning and health management of mechanical systems*](/publications/2020_karve_annual_conference_of_the_phm_society.html).
