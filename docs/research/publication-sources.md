@@ -30,3 +30,21 @@ Metadata below is checked against the linked publisher, proceedings, arXiv, or O
 - The expert-pruning record is labeled as an arXiv preprint because no public primary-source evidence of acceptance to the NeurIPS 2026 Workshop on On-Device Intelligence was found.
 - CoT-Guard is omitted because the public arXiv record does not establish a NeurIPS track or acceptance status.
 - Exact titles and author order for records are taken from the linked primary source; some older venue display names are abbreviated in the record for readability.
+
+## Release 2 archive mapping and reuse evidence
+
+The [Release 2 backlog](visual-release-2.md) maps seven pending Overleaf projects to the canonical titles and primary-source URLs already recorded above. [The manifest](visual-inventory.yaml) records exact archive paths, source captions, provisional archive figure numbers and narrative purpose for ten candidates. Archive TeX was inspected read-only on 2026-10-05; this is source identification, not a new publisher-license or final-paper verification.
+
+| Archive | Canonical site publication slug | Reuse state |
+|---|---|---|
+| `Reasoning_NeurIPS2025_workshop.zip` | `2025-prompt-difficulty-prediction` | `rights-review-required` |
+| `PIML.zip` | `2020_Kapusuzoglu_Jom` | `rights-review-required` |
+| `PIML-RESS.zip` | `2021_Kapusuzoglu_Reliability_Engineering_&_System_Safety` | `rights-review-required` |
+| `MultiObj - ASME_RISK-21-1006_final.zip` | `2022_Kapusuzoglu_ASCE-ASME_Journal_of_Risk_and_Uncertainty_in_Engineering_Systems_Part_B_Mechanical_Engineering` | `rights-review-required` |
+| `MultiLevel - Mitsubishi.zip` | `2023_Kapusuzoglu_Journal_of_Computing_and_Information_Science_in_Engineering` | `rights-review-required` |
+| `Adaptive-Mitsubishi.zip` | `2022_Kapusuzoglu_Structural_and_Multidisciplinary_Optimization` | `rights-review-required` |
+| `Process Optimization Under Uncertainty.zip` | `2020_Kapusuzoglu_Journal_of_Manufacturing_Science_and_Engineering` | `rights-review-required` |
+
+`Paper Category.zip` is a template. `SPEAR-MM.zip` is a duplicate/secondary source for `2025-spear-mm`, whose approved Release 1 figures come from `IEEE-SPEARMM Presentation.zip`. The duplicate process-optimization legacy route is not a separate publication destination. None of these mappings changes a Release 1 publication identity or its approved visual provenance.
+
+Publication metadata and permission to reuse a figure are separate evidence. Before a pending asset enters a publication bundle, record a specific permission or license with a source URL, scope, reviewer and review date in the manifest. Then confirm the figure against the final paper and complete the backlog's acceptance criteria. Until those checks pass, the existing `rights-review-required` state blocks import and publication.

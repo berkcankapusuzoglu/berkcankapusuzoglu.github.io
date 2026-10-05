@@ -7,6 +7,12 @@ motion_count: 0
 source_policy: "Private outer and nested ZIPs remain outside Git; only reviewed derivatives are publishable."
 temporary_work_directory: "asset-work/"
 caption_policy: "caption is the selected public editorial summary; original_caption records the source caption. Approved entries were compared against the versioned paper; source_page is the extracted figure PDF page and paper_page is the published paper page."
+backlog_policy:
+  release: 2
+  publication_gate: "No backlog asset may move into a publication bundle while license is rights-review-required. Record a specific permission or license, its source URL, scope and reviewer before preparing a public derivative."
+  candidate_limit_per_project: 2
+  figure_number_policy: "Candidate numbers follow the active archive TeX figure order; confirm final paper numbering and caption before approval."
+  acceptance_criteria: "Verify rights; match the final paper figure and caption; preserve axes, legends and data; record source checksum and attribution; write alt text, caption and takeaway; inspect mobile legibility and satisfy the 500 KB largest-derivative budget."
 license_checks:
   checked_on: "2026-10-04"
   papers:
@@ -34,6 +40,15 @@ projects:
     license: rights-review-required
     source_url: "https://link.springer.com/article/10.1007/s00158-022-03402-x"
     reason: "Queue an adaptive-surrogate overview after reuse rights are verified."
+    publication_title: "Adaptive surrogate modeling for high-dimensional spatio-temporal output"
+    release_priority: 4
+    candidate_entries:
+      - path: "figs/Fig1.pdf"
+        source_figure_number: 1
+        original_caption: "Schematic describing the proposed procedure for surrogate model construction with high-dimensional field data using rSVD"
+        caption_source: "templateArxiv.tex: fig:framework"
+        purpose: "Explain how dimension reduction and adaptive sampling make field-output surrogate construction tractable."
+        status: rights-review-required
   - archive: "IEEE-SPEARMM Presentation.zip"
     publication_slug: "2025-spear-mm"
     figure_count: 3
@@ -130,6 +145,15 @@ projects:
     license: rights-review-required
     source_url: "https://asmedigitalcollection.asme.org/computingengineering/article-abstract/23/1/011006/1145675"
     reason: "Queue the multi-level Bayesian network after reuse rights are verified."
+    publication_title: "Multi-Level Bayesian Calibration of a Multi-Component Dynamic System Model"
+    release_priority: 4
+    candidate_entries:
+      - path: "figs/figure2.pdf"
+        source_figure_number: 2
+        original_caption: "A simple hierarchical dynamic Bayesian network"
+        caption_source: "templateArxiv.tex: fig:DBN_; emphasis markup removed."
+        purpose: "Explain how uncertainty passes between components and time steps in a calibrated dynamic system."
+        status: rights-review-required
   - archive: "MultiObj - ASME_RISK-21-1006_final.zip"
     publication_slug: "2022_Kapusuzoglu_ASCE-ASME_Journal_of_Risk_and_Uncertainty_in_Engineering_Systems_Part_B_Mechanical_Engineering"
     figure_count: 25
@@ -138,6 +162,21 @@ projects:
     license: rights-review-required
     source_url: "https://asmedigitalcollection.asme.org/risk/article-abstract/8/1/011112/1129117"
     reason: "Queue methodology and one Pareto-front result after reuse rights are verified."
+    publication_title: "Multi-objective optimization under uncertainty of part quality in fused filament fabrication"
+    release_priority: 3
+    candidate_entries:
+      - path: "figures/Fig3.pdf"
+        source_figure_number: 3
+        original_caption: "Flowchart of the proposed methodology"
+        caption_source: "templateArxiv.tex: fig:summary"
+        purpose: "Connect uncertain quality predictions to choices among competing manufacturing objectives."
+        status: rights-review-required
+      - path: "figures/Fig22.pdf"
+        source_figure_number: 22
+        original_caption: "Pareto front and MCS results of Case 1"
+        caption_source: "templateArxiv.tex: fig:MCS1"
+        purpose: "Show the Case 1 trade-off and Monte Carlo check without implying one universally best design."
+        status: rights-review-required
   - archive: "PIML-RESS.zip"
     publication_slug: "2021_Kapusuzoglu_Reliability_Engineering_&_System_Safety"
     figure_count: 58
@@ -146,6 +185,15 @@ projects:
     license: rights-review-required
     source_url: "https://www.sciencedirect.com/science/article/pii/S0951832021002477"
     reason: "Queue the PIML strategy diagram after reuse rights are verified."
+    publication_title: "Information fusion and machine learning for sensitivity analysis using physics knowledge and experimental data"
+    release_priority: 2
+    candidate_entries:
+      - path: "PIML_strategies_v2.pdf"
+        source_figure_number: 2
+        original_caption: 'PIML strategies: (a) incorporating physics-based loss functions in the ML models to enforce physics constraints, (b) pre-training an ML model with physics model input-output ($\mathbf{X_{\mathrm{phy}}}$, $\mathbf{Y_{\mathrm{phy}}}$) and updating it with experimental training data ($\mathbf{X_{\mathrm{obs}}}$, $\mathbf{Y_{\mathrm{obs}}}$), (c) the trained ML model prediction $(\mathbf{\hat{Y}})$, (d) updated ML model prediction $(\mathbf{\hat{Y}})$. '
+        caption_source: "templateArxiv.tex: fig:diagram"
+        purpose: "Connect physics constraints and data fusion to the research arc toward foundation-model supervision."
+        status: rights-review-required
   - archive: "PIML.zip"
     publication_slug: "2020_Kapusuzoglu_Jom"
     figure_count: 14
@@ -154,6 +202,21 @@ projects:
     license: rights-review-required
     source_url: "https://link.springer.com/article/10.1007/s11837-020-04438-4"
     reason: "Queue one physics-informed ML comparison after reuse rights are verified."
+    publication_title: "Physics-informed and hybrid machine learning in additive manufacturing: application to fused filament fabrication"
+    release_priority: 2
+    candidate_entries:
+      - path: "Fig4.pdf"
+        source_figure_number: 4
+        original_caption: "PIML strategies: (a) incorporate physics constraints within the loss function of the DNN, (b) use physics model outputs as additional inputs to the DNN model, and (c) pre-training a DNN model with physics model input-output and updating it with experimental data."
+        caption_source: "templateArxiv.tex: fig:diagram"
+        purpose: "Show three concrete ways to combine physical knowledge with learned models."
+        status: rights-review-required
+      - path: "Fig6.pdf"
+        source_figure_number: 6
+        original_caption: "Performance and physical inconsistency of proposed models."
+        caption_source: "templateArxiv.tex: fig:Performance"
+        purpose: "Separate predictive performance from physical consistency when assessing hybrid models."
+        status: rights-review-required
   - archive: "Paper Category.zip"
     publication_slug: null
     figure_count: 0
@@ -170,6 +233,15 @@ projects:
     license: rights-review-required
     source_url: "https://asmedigitalcollection.asme.org/manufacturingscience/article-abstract/143/2/021007/1086236"
     reason: "Queue a bond-formation schematic or optimization workflow after reuse rights are verified."
+    publication_title: "Process Optimization Under Uncertainty for Improving the Bond Quality of Polymer Filaments in Fused Filament Fabrication"
+    release_priority: 5
+    candidate_entries:
+      - path: "FIGs/fig1.pdf"
+        source_figure_number: 1
+        original_caption: "The bond formation process between two filaments: (1) initial surface contact; (2) wetting or neck growth; (3) molecular diffusion and randomization across the cross-section of two FFF extruded filaments"
+        caption_source: "templateArxiv.tex: fig:BondProcess; nonbreaking spaces normalized."
+        purpose: "Give physical context for the manufacturing decisions in the uncertainty story."
+        status: rights-review-required
   - archive: "Reasoning_NeurIPS2025_workshop.zip"
     publication_slug: "2025-prompt-difficulty-prediction"
     figure_count: 24
@@ -178,6 +250,21 @@ projects:
     license: rights-review-required
     source_url: "https://openreview.net/pdf/87684b1b0842859502be60986422dd7752b9371d.pdf"
     reason: "Queue overview and routing plots for Release 2; verify source license then."
+    publication_title: "Optimizing Reasoning Efficiency through Prompt Difficulty Prediction"
+    release_priority: 1
+    candidate_entries:
+      - path: "figures/overview.pdf"
+        source_figure_number: 1
+        original_caption: "A classifier predicts problem difficulty from intermediate representations, and route each problem to the smallest reasoning model likely to solve it. This reduces inference cost while maintaining accuracy."
+        caption_source: "neurips_2025.tex: fig:overview"
+        purpose: "Explain difficulty-aware model routing for adaptive inference."
+        status: rights-review-required
+      - path: "figures/router_accuracy_predictor_S1.pdf"
+        source_figure_number: 4
+        original_caption: "Performance of accuracy-based routing using s1.1-32B layer outputs. Each problem is routed to the weakest model with predicted correctness above a threshold. Blue dots correspond to thresholds between 0.05 and 0.9."
+        caption_source: "neurips_2025.tex: fig:router-using-accuracy-s1"
+        purpose: "Explain the measured accuracy-cost trade-off as the correctness threshold changes."
+        status: rights-review-required
   - archive: "SPEAR-MM.zip"
     publication_slug: "2025-spear-mm"
     figure_count: 4
@@ -186,6 +273,8 @@ projects:
     license: rights-review-required
     source_url: "https://arxiv.org/abs/2511.08500"
     reason: "Older/incomplete source superseded by the presentation archive; fallback only if presentation provenance fails."
+    source_role: secondary
+    primary_archive: "IEEE-SPEARMM Presentation.zip"
   - archive: "[ICML_2026] CGD.zip"
     publication_slug: "2026-critique-guided-distillation"
     figure_count: 14
