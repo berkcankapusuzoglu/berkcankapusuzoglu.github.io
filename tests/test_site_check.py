@@ -267,38 +267,34 @@ class SiteCheckTests(unittest.TestCase):
 class VisualMetadataTests(unittest.TestCase):
     """Build real temporary publication bundles through the production validator."""
 
-    def test_generated_homepage_rejects_selection_across_featured_publications(self):
+    def test_production_layouts_reject_multiple_homepage_selections(self):
         repo = Path(__file__).parents[1]
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            layouts = root / 'layouts'
-            shutil.copytree(repo / 'layouts', layouts)
-            # Task 2 validates metadata; rendering ships later. Expose the featured
-            # selection with the agreed HTML markers in this fixture homepage.
-            (layouts / 'index.html').write_text(
-                '<main><h1>Fixture homepage</h1>{{ range partial "featured-publications.html" . }}'
-                '{{ range .Params.visuals }}{{ if .homepage }}'
-                '<figure data-research-visual data-research-homepage="true">'
-                '<img src="result.svg" alt="Comparison" width="10" height="10">'
-                '<figcaption>{{ .caption }}</figcaption></figure>{{ end }}{{ end }}{{ end }}</main>',
-                encoding='utf-8')
-            for index in (1, 2):
-                bundle = root / 'content/publications' / f'featured-{index}'
-                bundle.mkdir(parents=True)
-                metadata = dict(title=f'Featured {index}', date='2026-01-01', authors=['Author'],
-                                venue=dict(name='Test venue', type='preprint'), status='preprint',
-                                summary='A publication.', contribution='An insight.', topics=[], links=[],
-                                featured=True, featured_weight=index,
-                                visuals=[dict(self.visual(), homepage=True)])
-                (bundle / 'index.md').write_text(json.dumps(metadata), encoding='utf-8')
-                (bundle / 'result.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>', encoding='utf-8')
-            public = root / 'public'
-            result = subprocess.run(['hugo', '--contentDir', str(root / 'content'), '--layoutDir',
-                                     str(layouts), '--destination', str(public), '--panicOnWarning'],
-                                    cwd=repo, capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn('Homepage has more than one selected research visual',
-                          validate_html_document(public / 'index.html', '/'))
+        for second_featured in (True, False):
+            with self.subTest(second_featured=second_featured), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                for index in (1, 2):
+                    bundle = root / 'content/publications' / f'paper-{index}'
+                    bundle.mkdir(parents=True)
+                    metadata = dict(title=f'Paper {index}', date='2026-01-01', authors=['Author'],
+                                    venue=dict(name='Test venue', type='preprint'), status='preprint',
+                                    summary='A publication.', contribution='An insight.', topics=[], links=[],
+                                    featured=index == 1 or second_featured, featured_weight=index,
+                                    visuals=[dict(self.visual(), homepage=True)])
+                    (bundle / 'index.md').write_text(json.dumps(metadata), encoding='utf-8')
+                    (bundle / 'result.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>', encoding='utf-8')
+                result = subprocess.run(['hugo', '--contentDir', str(root / 'content'),
+                                         '--destination', str(root / 'public'), '--panicOnWarning'],
+                                        cwd=repo, capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0, 'Production build silently hid an extra homepage selection')
+                self.assertIn('Homepage has more than one selected research visual',
+                              result.stdout + result.stderr)
+
+    def test_production_layouts_reject_multiple_selections_in_one_publication(self):
+        result = self.build_visuals([dict(self.visual(), homepage=True),
+                                    dict(self.visual(), id='second', homepage=True)])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Homepage has more than one selected research visual',
+                      result.stdout + result.stderr)
 
     def build_visuals(self, visuals):
         repo = Path(__file__).parents[1]
@@ -399,7 +395,7 @@ class ResearchComponentTests(unittest.TestCase):
             return struct.pack('!I', len(data)) + kind + data + struct.pack('!I', zlib.crc32(kind + data))
         png = (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('!2I5B', 1600, 900, 8, 2, 0, 0, 0))
                + chunk(b'IDAT', zlib.compress((b'\x00' + b'\xff\xff\xff' * 1600) * 900)) + chunk(b'IEND', b''))
-        for name in ('static', 'sequence', 'vector'):
+        for name in ('static', 'sequence', 'vector', 'exact'):
             bundle = cls.root / 'content/publications' / name
             bundle.mkdir(parents=True)
             visual = dict(VisualMetadataTests().visual(), file='result.png', homepage=name == 'static')
@@ -409,6 +405,8 @@ class ResearchComponentTests(unittest.TestCase):
                                       dict(label='Final interpretation', file='result.png')]
             if name == 'vector':
                 visual['file'] = 'result.svg'
+            if name == 'exact':
+                visual['exact_pixels'] = True
             metadata = dict(title=f'{name.title()} fixture', date='2026-01-01', authors=['Author'],
                             venue=dict(name='Test venue', type='preprint'), status='preprint',
                             summary='A test publication.', contribution='A test contribution.',
@@ -451,6 +449,16 @@ class ResearchComponentTests(unittest.TestCase):
         self.assertEqual(image['attrs']['loading'], 'eager')
         self.assertEqual(image['attrs']['fetchpriority'], 'high')
         self.assertTrue(any(n['attrs'].get('data-research-homepage') == 'true' for n in document.nodes))
+
+    def test_static_exact_pixels_serves_original_without_derivatives(self):
+        document = self.page('publications/exact.html')
+        image = next(node for node in document.nodes if node['tag'] == 'img')
+        self.assertTrue(image['attrs']['src'].endswith('/media/result.png') or
+                        image['attrs']['src'].endswith('/exact/result.png'))
+        self.assertEqual((image['attrs']['width'], image['attrs']['height']), ('1600', '900'))
+        self.assertFalse(any(node['tag'] == 'source' for node in document.nodes))
+        self.assertEqual((self.public / 'publications/exact/result.png').read_bytes(),
+                         (self.root / 'content/publications/exact/result.png').read_bytes())
 
     def test_vector_resource_retains_viewbox_dimensions(self):
         document = self.page('publications/vector.html')

@@ -16,7 +16,7 @@ hugo version
 pdftoppm -v
 ```
 
-On another machine, point `$assetPython` to a Python 3.13 interpreter with Pillow and `$archive` to the private outer ZIP. Inventory and extraction need no Pillow; preparation, sequence authoring and the full asset tests do. Keep ZIPs outside the repository. `research-source/` and `asset-work/` are ignored scratch directories, not publication destinations.
+On another machine, point `$assetPython` to a Python 3.13 interpreter with Pillow and `$archive` to the private outer ZIP. Inventory and extraction need no Pillow; preparation, sequence authoring and the full asset tests do. The full Python suite also needs Node.js 22+ and the pinned npm dependencies because its sequence fixture runs Puppeteer and Pa11y; run `npm ci` before that suite. Node is not required for Hugo production builds or the asset CLI. Keep ZIPs outside the repository. `research-source/` and `asset-work/` are ignored scratch directories, not publication destinations.
 
 ## Five-minute path for an approved source
 
@@ -72,7 +72,7 @@ On another machine, point `$assetPython` to a Python 3.13 interpreter with Pillo
 
    Open the address printed by Hugo and follow the publication link. Existing publication URLs end in `.html`. Inspect at 360×800 and 1440×900, then stop the server with Ctrl+C before running checks.
 
-5. Run [the README validation commands](../../README.md#validate-changes), using `& $assetPython` in place of `python`. Start with the Python suite, production Hugo build and HTML checker; run the JavaScript syntax and Pa11y checks before release. Node.js 22+ is needed only for those accessibility tools. `npm ci` installs the pinned dependencies.
+5. Run [the README validation commands](../../README.md#validate-changes), using `& $assetPython` in place of `python`. First run `npm ci` to install the pinned browser-check dependencies, then the full Python suite, production Hugo build and HTML checker. Run the JavaScript syntax and Pa11y checks before release. Node.js 22+ is needed for the suite's browser fixture and the accessibility checks.
 
 6. Review the diff and commit only the intended files:
 

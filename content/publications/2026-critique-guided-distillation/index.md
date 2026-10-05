@@ -25,7 +25,7 @@ visuals:
   - id: cgd-accuracy
     file: media/cgd-accuracy.png
     role: result
-    alt: "Bar chart comparing five training methods across six reasoning evaluations for a LLaMA3.1-8B Instruct student; hatched CGD bars exceed distilled SFT and CFT bars."
+    alt: "Bar chart comparing the base model and four training methods across six reasoning evaluations for a LLaMA3.1-8B Instruct student; hatched CGD bars exceed distilled SFT and CFT bars."
     caption: "CGD improves LLaMA3.1-8B reasoning performance compared with distilled SFT and critique fine-tuning. The experiment uses a LLaMA3.3-70B Instruct teacher and 100K WebInstruct samples."
     takeaway: "In this experiment, learning to use critiques improves accuracy beyond learning refined answers alone or learning to generate critiques."
     source_label: "Berkcan Kapusuzoglu et al., Critique-Guided Distillation (2026), Figure 2"

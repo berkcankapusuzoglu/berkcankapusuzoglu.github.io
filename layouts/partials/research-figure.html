@@ -6,7 +6,7 @@
   {{ if $visual.sequence }}
     {{ partial "research-sequence.html" (dict "Page" .Page "Visual" $visual "Eager" $homepage "ID" $id) }}
   {{ else }}
-    <div class="research-visual-plot">{{ partial "research-picture.html" (dict "Page" .Page "File" $visual.file "Alt" $visual.alt "Eager" $homepage) }}</div>
+    <div class="research-visual-plot">{{ partial "research-picture.html" (dict "Page" .Page "File" $visual.file "Alt" $visual.alt "Eager" $homepage "Exact" ($visual.exact_pixels | default false)) }}</div>
   {{ end }}
   <figcaption class="research-visual-caption">
     <p id="{{ $id }}-takeaway" class="research-visual-takeaway">{{ $visual.takeaway }}</p>

@@ -8,7 +8,7 @@ This repository builds the public portfolio with Hugo 0.145.0. The production bu
 - Hugo Extended 0.145.0
 - Python 3.13 with Pillow for visual preparation and the full Python test suite; inventory and extraction use only the standard library
 - Poppler's `pdftoppm` on `PATH` for PDF preparation
-- Node.js 22 or newer only when running the Pa11y accessibility check
+- Node.js 22 or newer and the pinned npm dependencies for the full Python suite's browser fixture and the Pa11y accessibility check
 
 Install the Hugo Extended 0.145.0 release for your operating system from the [Hugo releases page](https://github.com/gohugoio/hugo/releases/tag/v0.145.0). Add the extracted `hugo` executable to `PATH`, then confirm `hugo version` reports `v0.145.0` and `extended`.
 
@@ -81,17 +81,17 @@ The repository stores the public PDF, not the private resume source that contain
 Run the same checks used by CI before opening a pull request:
 
 ```sh
+npm ci
 python -m unittest discover -s tests -p "test_*.py" -v
 hugo --cleanDestinationDir --minify --panicOnWarning --printPathWarnings
 python scripts/site_check.py --public public --expected tests/expected-urls.txt
-npm ci
 npm run check:a11y
 node --check scripts/check_a11y.mjs
 node --check assets/js/research-visuals.js
 git diff --check
 ```
 
-Pa11y CI checks the home, research, publications, a long-author paper, leadership, About, Research Notes, and 404 pages at desktop and mobile widths. It enforces WCAG 2.0 AA. CI installs the pinned Node tools; Node is not part of the Hugo production build. Use the Python interpreter with Pillow described in the visual guide; a standard-library-only interpreter cannot run all asset tests.
+Run `npm ci` before the full Python suite: its sequence-component test launches the Node browser checker, which imports Puppeteer and Pa11y. Pa11y CI checks the home, research, publications, a long-author paper, leadership, About, Research Notes, and 404 pages at desktop and mobile widths. It enforces WCAG 2.0 AA. CI installs the pinned Node tools before tests; Node is not part of the Hugo production build. Use the Python interpreter with Pillow described in the visual guide; a standard-library-only interpreter cannot run all asset tests.
 
 ## Review and deployment
 

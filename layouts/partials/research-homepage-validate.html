@@ -1,0 +1,12 @@
+{{- $selected := slice -}}
+{{- range where site.RegularPages "Section" "publications" -}}
+  {{- $page := . -}}
+  {{- range .Params.visuals -}}
+    {{- if .homepage -}}
+      {{- $selected = $selected | append (printf "%s#%s" $page.File.Path .id) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if gt (len $selected) 1 -}}
+  {{- errorf "Homepage has more than one selected research visual: %s. Set homepage: true on at most one visual across publications." (delimit $selected ", ") -}}
+{{- end -}}

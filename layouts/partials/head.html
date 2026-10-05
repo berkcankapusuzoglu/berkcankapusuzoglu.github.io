@@ -7,6 +7,7 @@
 {{ $hasSequence := false }}
 {{ range $page.Params.visuals }}{{ if .sequence }}{{ $hasSequence = true }}{{ end }}{{ end }}
 {{ if $page.IsHome }}
+  {{ partial "research-homepage-validate.html" $page }}
   {{ range partial "featured-publications.html" $page }}
     {{ range .Params.visuals }}{{ if and .homepage .sequence }}{{ $hasSequence = true }}{{ end }}{{ end }}
   {{ end }}
