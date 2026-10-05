@@ -1,5 +1,8 @@
 ---
 title: "Reasoning and Distillation"
+_build:
+  render: never
+  list: never
 date: 2026-09-29
 description: "Training language models to improve their reasoning by learning from critiques and refinement."
 ---

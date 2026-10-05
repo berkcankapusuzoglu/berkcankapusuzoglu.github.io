@@ -12,13 +12,13 @@ links:
 themes:
   - title: Reasoning and distillation
     summary: Training methods that help language models identify and improve flawed reasoning.
-    link: /research/reasoning-and-distillation.html
+    link: /publications.html
   - title: Efficient model systems
     summary: Model design and adaptation methods that make capable systems more efficient to use.
-    link: /research/efficient-model-systems.html
+    link: /publications.html
   - title: Trustworthy evaluation
     summary: Evaluation and safeguards that make model behavior easier to assess and rely on.
-    link: /research/trustworthy-ml.html
+    link: /publications.html
 proof_points:
   - label: PMLR 306
     value: Critique-Guided Distillation for Robust Reasoning via Refinement

@@ -22,7 +22,11 @@ PAGINATOR_REDIRECT_ROUTES = {
 LOCAL_REDIRECT_TARGETS = {
     '/news.html': '/writing.html',
     '/news/job/job.html': '/about.html',
-    '/news/personal/personal.html': '/research/efficient-model-systems.html',
+    '/news/personal/personal.html': '/publications.html',
+    '/research.html': '/publications.html',
+    '/research/reasoning-and-distillation.html': '/publications.html',
+    '/research/efficient-model-systems.html': '/publications.html',
+    '/research/trustworthy-ml.html': '/publications.html',
 }
 
 

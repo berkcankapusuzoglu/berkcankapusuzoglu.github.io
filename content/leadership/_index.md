@@ -1,6 +1,9 @@
 ---
 title: "Leadership"
 description: "A practical approach to technical ownership, research direction, and dependable AI systems."
+_build:
+  render: never
+  list: never
 ---
 
 I approach technical leadership as the work of giving good research a clear path into dependable systems.

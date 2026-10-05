@@ -27,10 +27,10 @@ hugo --cleanDestinationDir --minify --panicOnWarning --printPathWarnings
 ## Where content lives
 
 - `data/profile.yaml` holds the public name, role, research themes, professional links, and homepage proof points.
-- `content/research/` holds the research overview and three research-area pages.
-- `content/leadership/` and `content/about/` hold the leadership and biography pages.
-- `content/publications/` holds one Markdown record per paper.
-- `content/writing/` holds Research Notes. The landing page lists the published bundles and paginates after ten notes.
+- `content/about/` holds the biography, education, and academic interests.
+- `content/publications/` holds one Markdown record per paper. The Publications page shows the complete record on one page.
+- `content/writing/` holds Blog posts. The landing page shows each title, opening excerpt, publication date, reading time, and a link to the complete post.
+- `content/research/` and `content/leadership/` are retained as unpublished source history. Legacy research URLs redirect to Publications.
 - `static/files/resume/Berkcan_Resume.pdf` is the public CV PDF.
 - `content/authors/admin/avatar.jpg` is the homepage portrait. Keep the image at this path.
 
@@ -60,9 +60,9 @@ contribution: "What the work contributes and Berkcan's role."
 
 The required fields are `title`, `date`, `authors`, `venue.name`, `venue.type`, `status`, `summary`, and `contribution`. The templates require `topics` and `links` lists even when empty; the release tests expect published papers to have a topic and a canonical paper link. Use a specific link label and a first-party proceedings, publisher, DOI, arXiv, or OpenReview URL. Add a new publication's generated route to `tests/expected-urls.txt`; the tests compare the complete route set. Set `featured: true` to show a paper on the homepage. Smaller `featured_weight` values appear first; use the next available number to choose its position.
 
-### Publish a Research Note
+### Publish a Blog post
 
-Create `content/writing/<slug>/index.md` with a title, date, description, and the note text. Hugo lists these page bundles on the Research Notes page, newest first, with each title, date, and summary linked accessibly. Keep a note focused on a research question, an engineering lesson, or a useful reading note, and link to its supporting publication or source. After publishing, adapt the note's main point and one takeaway into a LinkedIn post, then link back to the full note. Do not publish confidential work details or unapproved metrics.
+Create `content/writing/<slug>/index.md` with a title, date, description, `summary`, and the post text. Hugo lists these page bundles on the Blog page, newest first. Keep `summary` to one or two opening sentences; it becomes the listing excerpt. Each post should focus on a research question, an engineering lesson, or a useful reading note and link to its supporting publication or source. After publishing, adapt the main point and one takeaway into a LinkedIn post, then link back to the complete article. Do not publish confidential work details or unapproved metrics.
 
 Follow [Publishing a visual Research Note](docs/research/publishing-a-visual-note.md) for the note template, exact-pixel sequence recipe, figure placement and LinkedIn adaptation. Visual notes use the same `visuals` contract as publications.
 
@@ -91,7 +91,7 @@ node --check assets/js/research-visuals.js
 git diff --check
 ```
 
-Run `npm ci` before the full Python suite: its sequence-component test launches the Node browser checker, which imports Puppeteer and Pa11y. Pa11y CI checks the home, research, publications, a long-author paper, leadership, About, Research Notes, and 404 pages at desktop and mobile widths. It enforces WCAG 2.0 AA. CI installs the pinned Node tools before tests; Node is not part of the Hugo production build. Use the Python interpreter with Pillow described in the visual guide; a standard-library-only interpreter cannot run all asset tests.
+Run `npm ci` before the full Python suite: its sequence-component test launches the Node browser checker, which imports Puppeteer and Pa11y. Pa11y CI checks Home, Publications, a long-author paper, About, Blog, the CGD post, and 404 at desktop and mobile widths. It enforces WCAG 2.0 AA. CI installs the pinned Node tools before tests; Node is not part of the Hugo production build. Use the Python interpreter with Pillow described in the visual guide; a standard-library-only interpreter cannot run all asset tests.
 
 ## Review and deployment
 

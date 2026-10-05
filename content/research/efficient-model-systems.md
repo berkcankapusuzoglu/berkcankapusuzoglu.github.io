@@ -1,5 +1,8 @@
 ---
 title: "Efficient Model Systems"
+_build:
+  render: never
+  list: never
 date: 2026-09-03
 description: "Methods for improving model efficiency through expert selection and careful adaptation."
 ---

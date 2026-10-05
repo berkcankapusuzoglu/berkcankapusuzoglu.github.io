@@ -1,10 +1,23 @@
 ---
 title: "About"
-description: "Berkcan Kapusuzoglu is an applied researcher connecting language model research with reliable engineering."
+description: "Berkcan Kapusuzoglu is an applied AI researcher whose work spans language model reasoning, efficient systems, and scientific machine learning."
 ---
 
-I am Berkcan Kapusuzoglu, a Staff Applied Researcher - AI Foundations. I work between research and engineering: studying how language models reason and adapt, then connecting those ideas to systems that can be evaluated and used reliably.
+I am Berkcan Kapusuzoglu, a Staff Applied Researcher - AI Foundations. My work focuses on language model reasoning, distillation, efficient model systems, and dependable evaluation. I enjoy carrying a research question from its assumptions and experiments through the engineering decisions required to make the result useful.
 
-My training began in mechanical engineering and grew through applied mathematics, computational engineering, and doctoral research. I earned a Ph.D. in Civil Engineering from Vanderbilt University, an M.S. in Applied Mathematics from Delft University of Technology, an M.S. in Computational Engineering from the University of Erlangen-Nuremberg, and a B.S. in Mechanical Engineering from Bilkent University.
+My research path began in scientific and physics-informed machine learning, uncertainty quantification, and engineering design. It now extends to foundation models, including critique-guided distillation, policy distillation, adaptive inference, mixture-of-experts compression, and methods for retaining model capabilities during adaptation.
 
-Today, my research focuses on reasoning and distillation, efficient model systems, and trustworthy evaluation. I value clear evidence, useful collaboration, and technical work that remains understandable from an initial question through deployment.
+## Education
+
+I completed my Ph.D. in Civil Engineering at Vanderbilt University. My doctoral work developed computational methods for decision-making and engineering systems under uncertainty.
+
+Before Vanderbilt, I earned an M.S. in Applied Mathematics from Delft University of Technology and an M.S. in Computational Engineering from the University of Erlangen-Nuremberg. I began my training with a B.S. in Mechanical Engineering from Bilkent University.
+
+## Academic Interests
+
+- Language model reasoning and distillation
+- Efficient model systems and mixture-of-experts models
+- Adaptive inference and agentic evaluation
+- Trustworthy evaluation and capability retention
+- Scientific and physics-informed machine learning
+- Uncertainty quantification and engineering design

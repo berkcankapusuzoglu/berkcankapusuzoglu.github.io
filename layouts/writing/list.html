@@ -9,19 +9,20 @@
 {{ end }}
 {{ define "main" }}
   <article class="page-content">
-    <header class="page-heading"><p class="eyebrow">Writing</p><h1>{{ .Title }}</h1>{{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}</header>
+    <header class="page-heading"><h1>{{ .Title }}</h1>{{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}</header>
     {{ if gt (len .RegularPages) 0 }}
       {{ $paginator := .Paginate .RegularPages.ByDate.Reverse 10 }}
       {{ .Store.Set "paginationPageNumber" $paginator.PageNumber }}
-      <ul class="writing-list">
+      <div class="blog-list">
         {{ range $paginator.Pages }}
-          <li>
+          <article class="blog-entry">
             <h2><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></h2>
-            <p><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time></p>
-            <p>{{ .Summary }}</p>
-          </li>
+            <p class="blog-excerpt">{{ .Params.summary | default .Summary }}</p>
+            <p><a class="text-link" href="{{ .RelPermalink }}">Read more</a></p>
+            <p class="blog-meta"><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time> · {{ .ReadingTime }} minute read</p>
+          </article>
         {{ end }}
-      </ul>
+      </div>
       {{ template "_internal/pagination.html" . }}
     {{ else }}
       <div class="prose notes-empty-state">{{ .Content }}</div>

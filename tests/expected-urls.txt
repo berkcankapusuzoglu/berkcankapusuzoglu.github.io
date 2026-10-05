@@ -1,7 +1,6 @@
 /
 /404.html
 /about.html
-/about/page/1.html
 /categories.html
 /categories/page/1.html
 /news.html
@@ -33,13 +32,10 @@
 /publications/2026-load-balancing-expert-pruning.html
 /publications/2026-model-diversity-reasoning.html
 /publications/2026-structured-thoughts.html
-/publications/page/1.html
-/publications/page/2.html
 /research.html
 /research/efficient-model-systems.html
 /research/reasoning-and-distillation.html
 /research/trustworthy-ml.html
-/leadership.html
 /tags.html
 /tags/page/1.html
 /writing.html

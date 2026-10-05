@@ -211,7 +211,7 @@ class SiteCheckTests(unittest.TestCase):
     def test_local_news_redirect_routes_are_recognized(self):
         redirects = {'/news.html': '/writing.html',
                      '/news/job/job.html': '/about.html',
-                     '/news/personal/personal.html': '/research/efficient-model-systems.html'}
+                     '/news/personal/personal.html': '/publications.html'}
         for route, target_path in redirects.items():
             target = f'https://berkcankapusuzoglu.github.io{target_path}'
             redirect = self.root / route.lstrip('/')
@@ -724,12 +724,23 @@ class GeneratedShellTests(unittest.TestCase):
         canonical_bond_record = 'https://berkcankapusuzoglu.github.io/publications/2020_kapusuzoglu_journal_of_manufacturing_science_and_engineering.html'
         self.assertEqual(sum(href == canonical_bond_record for href, _ in title_links), 1)
 
+    def test_publications_is_one_complete_academic_record_with_scholar_link(self):
+        self.assertNotIn('publications/page/2.html', self.all_pages)
+        document = self.all_pages['publications.html']
+        entries = [node for node in document.nodes if 'data-publication-card' in node['attrs']]
+        self.assertGreater(len(entries), 10)
+        scholar_links = [node for node in document.nodes if node['tag'] == 'a' and
+                         'scholar.google.com/citations' in node['attrs'].get('href', '')]
+        self.assertGreaterEqual(len(scholar_links), 1)
+        self.assertTrue(any('Google Scholar' in _accessible_name(link, {})
+                            for link in scholar_links))
+
     def test_paginator_metadata_is_scoped_and_self_canonical(self):
         repo = Path(__file__).parents[1]
         for relative in ('layouts/_default/baseof.html', 'layouts/partials/head.html',
                          'layouts/partials/seo.html'):
             self.assertNotIn('.Paginator', (repo / relative).read_text(encoding='utf-8'))
-        for route in ('publications/page/2.html', 'publication-type/2/page/2.html'):
+        for route in ('publication-type/2/page/2.html',):
             with self.subTest(route=route):
                 document = self.all_pages[route]
                 canonical = next(node['attrs'].get('href', '') for node in document.nodes
@@ -817,7 +828,7 @@ class GeneratedShellTests(unittest.TestCase):
 
     def test_legacy_news_routes_redirect_to_current_context(self):
         targets = {'news.html': '/writing.html', 'news/job/job.html': '/about.html',
-                   'news/personal/personal.html': '/research/efficient-model-systems.html'}
+                   'news/personal/personal.html': '/publications.html'}
         for route, target in targets.items():
             with self.subTest(route=route):
                 output = (self.public / route).read_text(encoding='utf-8')
@@ -986,10 +997,11 @@ class GeneratedShellTests(unittest.TestCase):
         names = {_accessible_name(node, {}).casefold() for node in links}
         self.assertTrue({name.casefold() for name in
                          ('Publications', 'Google Scholar', 'GitHub', 'LinkedIn', 'Email')} <= names)
-        self.assertIn('Explore the research'.casefold(), names)
-        research_cta = next(node for node in links if _accessible_name(node, {}).strip() ==
-                            'Explore the research')
-        self.assertIn(research_cta['attrs'].get('href'), ('/research.html', './research.html'))
+        self.assertIn('Explore the publications'.casefold(), names)
+        publications_cta = next(node for node in links if _accessible_name(node, {}).strip() ==
+                                'Explore the publications')
+        self.assertIn(publications_cta['attrs'].get('href'),
+                      ('/publications.html', './publications.html'))
         self.assertIn('Read the CV'.casefold(), names)
         self.assertIn('Get in touch'.casefold(), names)
 
@@ -1101,12 +1113,8 @@ class GeneratedShellTests(unittest.TestCase):
         about = (self.public / 'about.html').read_text(encoding='utf-8')
         self.assertIn('Ph.D. in Civil Engineering', about)
 
-    def test_leadership_renders_owner_supplied_policy_distillation_example(self):
-        paragraphs = [_accessible_text(node) for node in self.visible(self.all_pages['leadership.html'])
-                      if node['tag'] == 'p' and 'MOPD' in _accessible_text(node)]
-        self.assertEqual(paragraphs, [
-            'In my latest role, I worked on policy distillation (OPD) and multi-teacher OPD '
-            '(MOPD), improving internal model performance on agentic tasks.'])
+    def test_leadership_is_not_published(self):
+        self.assertNotIn('leadership.html', self.all_pages)
 
     def test_homepage_reuses_portrait_with_accessible_alt_text(self):
         document = self.pages['index.html']
@@ -1136,11 +1144,9 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertNotRegex(visible_text, r'\b\d{5}(?:-\d{4})?\b')
         self.assertNotIn('tel:', html)
 
-    def test_research_leadership_about_and_notes_routes_have_unique_metadata(self):
+    def test_about_publications_and_blog_have_unique_metadata(self):
         metadata = []
-        for route in ('research.html', 'research/reasoning-and-distillation.html',
-                      'research/efficient-model-systems.html', 'research/trustworthy-ml.html',
-                      'leadership.html', 'about.html', 'writing.html'):
+        for route in ('about.html', 'publications.html', 'writing.html'):
             path = self.public / route
             self.assertTrue(path.exists(), f'missing generated route: /{route}')
             document = _Document()
@@ -1156,7 +1162,7 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertEqual(len({title for title, _ in metadata}), len(metadata))
         self.assertEqual(len({description for _, description in metadata}), len(metadata))
 
-    def test_navigation_has_research_leadership_about_and_notes(self):
+    def test_navigation_is_home_about_publications_blog(self):
         document = self.pages['index.html']
         primary = next(node for node in document.nodes if node['tag'] == 'nav' and
                        node['attrs'].get('aria-label', '').casefold() == 'primary')
@@ -1165,25 +1171,26 @@ class GeneratedShellTests(unittest.TestCase):
                 if isinstance(child, dict):
                     yield child
                     yield from descendants(child)
-        names = {_accessible_name(node, {}).casefold() for node in descendants(primary)
-                 if node['tag'] == 'a'}
-        expected = {'research', 'publications', 'leadership', 'about', 'research notes'}
-        self.assertLessEqual(expected, names)
+        links = [node for node in descendants(primary) if node['tag'] == 'a']
+        self.assertEqual([_accessible_name(node, {}).strip() for node in links],
+                         ['Home', 'About', 'Publications', 'Blog'])
+        self.assertEqual([urlparse(urljoin('https://berkcankapusuzoglu.github.io/',
+                                          node['attrs'].get('href', ''))).path for node in links],
+                         ['/', '/about.html', '/publications.html', '/writing.html'])
 
-    def test_each_research_theme_links_a_supporting_publication(self):
-        required = {
-            'reasoning-and-distillation.html': ('2026-critique-guided-distillation.html',),
-            'efficient-model-systems.html': ('2026-load-balancing-expert-pruning.html', '2025-spear-mm.html'),
-            'trustworthy-ml.html': ('2026-critique-guided-distillation.html', '2025-spear-mm.html'),
-        }
-        for route, papers in required.items():
+    def test_legacy_research_routes_redirect_to_publications(self):
+        for route in ('research.html', 'research/reasoning-and-distillation.html',
+                      'research/efficient-model-systems.html', 'research/trustworthy-ml.html'):
             with self.subTest(route=route):
-                path = self.public / 'research' / route
-                self.assertTrue(path.exists(), f'missing generated research theme: /research/{route}')
-                document = _Document()
-                document.feed(path.read_text(encoding='utf-8'))
-                hrefs = {node['attrs'].get('href', '') for node in document.nodes if node['tag'] == 'a'}
-                self.assertTrue(any(paper in href for paper in papers for href in hrefs), route)
+                document = self.all_pages[route]
+                canonical = next(node['attrs'].get('href') for node in document.nodes
+                                 if node['tag'] == 'link' and node['attrs'].get('rel') == 'canonical')
+                refresh = next(node['attrs'].get('content') for node in document.nodes
+                               if node['tag'] == 'meta' and
+                               node['attrs'].get('http-equiv', '').casefold() == 'refresh')
+                self.assertEqual(canonical, 'https://berkcankapusuzoglu.github.io/publications.html')
+                self.assertEqual(refresh.casefold(),
+                                 '0; url=https://berkcankapusuzoglu.github.io/publications.html')
 
     def test_about_maps_the_two_masters_degrees_to_the_correct_fields(self):
         path = self.public / 'about.html'
@@ -1195,7 +1202,17 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertRegex(text, r'(?:delft.{0,120}applied mathematics|applied mathematics.{0,120}delft)')
         self.assertRegex(text, r'(?:erlangen-nuremberg.{0,120}computational engineering|computational engineering.{0,120}erlangen-nuremberg)')
 
-    def test_research_notes_lists_the_published_cgd_note(self):
+    def test_about_is_a_personal_academic_profile_with_portrait(self):
+        document = self.all_pages['about.html']
+        text = ' '.join(_accessible_text(node) for node in self.visible(document))
+        self.assertIn('Education', text)
+        self.assertIn('Academic Interests', text)
+        portraits = [node for node in document.nodes if node['tag'] == 'img' and
+                     'avatar.jpg' in node['attrs'].get('src', '')]
+        self.assertEqual(len(portraits), 1)
+        self.assertEqual(portraits[0]['attrs'].get('alt'), 'Portrait of Berkcan Kapusuzoglu')
+
+    def test_blog_lists_the_published_cgd_post_with_excerpt_and_reading_time(self):
         path = self.public / 'writing.html'
         self.assertTrue(path.exists(), 'missing generated route: /writing.html')
         document = _Document()
@@ -1203,6 +1220,9 @@ class GeneratedShellTests(unittest.TestCase):
         text = ' '.join(_accessible_text(node) for node in self.visible(document))
         self.assertNotIn('no research notes have been published yet', text.casefold())
         self.assertIn('Learning from mistakes with critique-guided distillation', text)
+        self.assertIn('Teacher feedback can supervise refinement during training', text)
+        self.assertIn('Read more', text)
+        self.assertRegex(text, r'\d+ minute read')
         hrefs = {node['attrs'].get('href', '') for node in document.nodes if node['tag'] == 'a'}
         self.assertTrue(any('/writing/critique-guided-distillation-refinement.html' in href for href in hrefs))
 
@@ -1234,16 +1254,6 @@ class GeneratedShellTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(output.read_bytes()).digest(),
                              hashlib.sha256(source.read_bytes()).digest())
 
-    def test_writing_template_lists_pages_with_accessible_metadata(self):
-        template = (Path(__file__).parents[1] / 'layouts/writing/list.html').read_text(
-            encoding='utf-8')
-        self.assertRegex(template, r'if\s+gt\s+\(len\s+\.RegularPages\)\s+0')
-        self.assertRegex(template, r'range\s+\$paginator\.Pages')
-        for expression in ('.RelPermalink', '.Title', '.Date', '.Summary'):
-            with self.subTest(expression=expression):
-                self.assertIn(expression, template)
-        self.assertIn('notes-empty-state', template)
-
     def test_writing_page_lists_a_real_note_bundle(self):
         repo = Path(__file__).parents[1]
         with tempfile.TemporaryDirectory() as directory:
@@ -1270,6 +1280,8 @@ class GeneratedShellTests(unittest.TestCase):
             self.assertIn('A Test Note', text)
             self.assertIn('September 30, 2026', text)
             self.assertIn('A short test note summary', text)
+            self.assertIn('Read more', text)
+            self.assertRegex(text, r'\d+ minute read')
             self.assertNotIn('No research notes have been published yet', text)
             self.assertTrue(any(node['tag'] == 'a' and
                                 node['attrs'].get('href') == './writing/a-test-note.html' and
@@ -1311,16 +1323,15 @@ class GeneratedShellTests(unittest.TestCase):
                                  ' '.join(_accessible_text(node) for node in document.nodes))
                 note_ids = [Path(urlparse(node['attrs'].get('href', '')).path).stem
                             for node in document.nodes if node['tag'] == 'a' and
-                            '/writing/note-' in node['attrs'].get('href', '')]
+                            '/writing/note-' in node['attrs'].get('href', '') and
+                            _accessible_name(node, {}).startswith('Research Note')]
                 page_notes.append(note_ids)
             self.assertTrue(set(page_notes[0]).isdisjoint(page_notes[1]))
             self.assertEqual(set(page_notes[0] + page_notes[1]), expected)
             self.assertEqual(len(page_notes[0] + page_notes[1]), len(expected))
 
     def test_new_narrative_pages_avoid_confidential_claims(self):
-        for route in ('research.html', 'research/reasoning-and-distillation.html',
-                      'research/efficient-model-systems.html', 'research/trustworthy-ml.html',
-                      'leadership.html', 'about.html', 'writing.html'):
+        for route in ('about.html', 'writing.html'):
             with self.subTest(route=route):
                 document = _Document()
                 document.feed((self.public / route).read_text(encoding='utf-8'))
@@ -1335,11 +1346,11 @@ class GeneratedShellTests(unittest.TestCase):
         text = ' '.join(_accessible_text(node) for node in self.visible(document))
         self.assertIn('Staff Applied Researcher - AI Foundations', text)
 
-    def test_research_notes_explains_publishable_and_reusable_content(self):
+    def test_blog_explains_publishable_and_reusable_content(self):
         document = _Document()
         document.feed((self.public / 'writing.html').read_text(encoding='utf-8'))
         text = ' '.join(_accessible_text(node) for node in self.visible(document)).casefold()
-        self.assertIn('publishable notes', text)
+        self.assertIn('short essays', text)
         self.assertIn('linkedin', text)
 
 

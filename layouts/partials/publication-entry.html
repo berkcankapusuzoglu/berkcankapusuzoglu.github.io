@@ -1,0 +1,11 @@
+{{ $page := . }}
+{{ partial "publication-validate.html" $page }}
+<article class="publication-entry" data-publication-card data-publication data-status="{{ $page.Params.status }}" data-topic="{{ delimit $page.Params.topics " " }}">
+  <h2><a href="{{ $page.RelPermalink }}">{{ $page.Title }}</a></h2>
+  <p class="publication-authors" data-publication-authors>{{ delimit $page.Params.authors ", " }}</p>
+  <p class="publication-citation" data-publication-venue>
+    {{ $page.Date.Format "2006" }}. {{ $page.Params.venue.name }}.
+    <span data-venue-type="{{ $page.Params.venue.type }}">{{ $page.Params.status | humanize }}.</span>
+  </p>
+  {{ partial "publication-links.html" $page }}
+</article>

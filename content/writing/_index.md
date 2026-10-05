@@ -1,6 +1,6 @@
 ---
-title: "Research Notes"
-description: "Publishable notes on language model reasoning, efficient systems, and reliable evaluation."
+title: "Blog"
+description: "Short essays on language model research, efficient AI systems, and the engineering choices behind them."
 ---
 
-These publishable notes connect research methods to engineering decisions. A Research Note can also be adapted into a LinkedIn post that links back to the canonical article. The research pages collect the supporting work on [reasoning and distillation](/research/reasoning-and-distillation.html), [efficient model systems](/research/efficient-model-systems.html), and [trustworthy evaluation](/research/trustworthy-ml.html).
+These short essays connect research methods to engineering decisions. Each post can also become a concise LinkedIn article that links back to the complete version here.

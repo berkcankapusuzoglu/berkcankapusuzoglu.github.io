@@ -1,5 +1,8 @@
 ---
 title: "Trustworthy Evaluation"
+_build:
+  render: never
+  list: never
 date: 2025-11-11
 description: "Evaluation practices that make reasoning and model adaptation easier to assess."
 ---

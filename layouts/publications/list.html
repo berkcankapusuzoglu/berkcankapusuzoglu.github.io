@@ -1,17 +1,10 @@
-{{ define "head" }}
-  {{ $papers := where .RegularPages "Params.legacy_duplicate" "!=" true }}
-  {{ $paginator := .Paginate ($papers.ByDate.Reverse) 10 }}
-  {{ .Store.Set "paginationPageNumber" $paginator.PageNumber }}
-  {{ partial "head.html" (dict "Page" . "PageNumber" $paginator.PageNumber) }}
-{{ end }}
 {{ define "main" }}
 <section class="publication-list">
-  <header class="page-heading"><p class="eyebrow">Research record</p><h1>{{ .Title }}</h1><p class="lede">Peer-reviewed research and preprints, with explicit venue and publication status.</p></header>
+  <header class="page-heading"><h1>{{ .Title }}</h1><p class="lede">A complete record of peer-reviewed papers, workshop papers, and preprints across AI and engineering.</p><p>See the complete citation record on <a href="{{ site.Data.profile.links.scholar }}">Google Scholar</a>.</p></header>
   {{ .Content }}
   {{ $papers := where .RegularPages "Params.legacy_duplicate" "!=" true }}
-  {{ $paginator := .Paginate ($papers.ByDate.Reverse) 10 }}
-  {{ .Store.Set "paginationPageNumber" $paginator.PageNumber }}
-  {{ range $paginator.Pages }}{{ partial "publication-card.html" . }}{{ end }}
-  {{ template "_internal/pagination.html" . }}
+  <div class="publication-record">
+    {{ range $papers.ByDate.Reverse }}{{ partial "publication-entry.html" . }}{{ end }}
+  </div>
 </section>
 {{ end }}

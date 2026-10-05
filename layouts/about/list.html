@@ -1,0 +1,9 @@
+{{ define "main" }}
+  <article class="page-content about-page">
+    <header class="page-heading"><h1>{{ .Title }}</h1>{{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}</header>
+    <div class="about-layout">
+      <figure class="about-portrait"><img src="{{ "authors/admin/avatar.jpg" | relURL }}" alt="Portrait of Berkcan Kapusuzoglu"></figure>
+      <div class="prose">{{ .Content }}</div>
+    </div>
+  </article>
+{{ end }}
