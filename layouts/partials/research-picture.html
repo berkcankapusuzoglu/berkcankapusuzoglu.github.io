@@ -20,20 +20,20 @@
 {{- else -}}
   {{- $width = $resource.Width -}}{{- $height = $resource.Height -}}
   {{- $used := slice -}}
-  {{- range slice 640 960 1440 -}}
+  {{- if not .Exact -}}{{- range slice 640 960 1440 -}}
     {{- $candidateWidth := int (math.Min . $width) -}}
     {{- if not (in $used $candidateWidth) -}}
       {{- $used = $used | append $candidateWidth -}}
       {{- $image := $resource.Resize (printf "%dx webp" $candidateWidth) -}}
       {{- $sources = $sources | append (printf "%s %dw" $image.RelPermalink $image.Width) -}}
     {{- end -}}
-  {{- end -}}
+  {{- end -}}{{- end -}}
 {{- end -}}
 {{- if or (le $width 0) (le $height 0) -}}
   {{- errorf "Publication %s visual resource %s needs positive dimensions or an SVG viewBox" .Page.File.Path .File -}}
 {{- end -}}
 {{- $sizes := "(min-width: 74.5rem) 1152px, (min-width: 42rem) calc(100vw - 2.5rem), calc(100vw - 2rem)" -}}
-{{- if .Page.Params.featured -}}
+{{- if or .Page.Params.featured (eq .Page.Section "writing") -}}
   {{- $sizes = "(max-width: 42rem) 1440px, (min-width: 74.5rem) 1152px, calc(100vw - 2.5rem)" -}}
 {{- end -}}
 <picture>

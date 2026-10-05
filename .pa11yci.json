@@ -21,6 +21,8 @@
     {"url": "http://127.0.0.1:8080/about.html", "viewport": {"width": 360, "height": 800}},
     {"url": "http://127.0.0.1:8080/writing.html", "viewport": {"width": 1440, "height": 900}},
     {"url": "http://127.0.0.1:8080/writing.html", "viewport": {"width": 360, "height": 800}},
+    {"url": "http://127.0.0.1:8080/writing/critique-guided-distillation-refinement.html", "viewport": {"width": 1440, "height": 900}},
+    {"url": "http://127.0.0.1:8080/writing/critique-guided-distillation-refinement.html", "viewport": {"width": 360, "height": 800}},
     {"url": "http://127.0.0.1:8080/404.html", "viewport": {"width": 1440, "height": 900}},
     {"url": "http://127.0.0.1:8080/404.html", "viewport": {"width": 360, "height": 800}}
   ]

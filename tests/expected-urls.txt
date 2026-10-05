@@ -43,3 +43,5 @@
 /tags.html
 /tags/page/1.html
 /writing.html
+/writing/critique-guided-distillation-refinement.html
+/writing/page/1.html

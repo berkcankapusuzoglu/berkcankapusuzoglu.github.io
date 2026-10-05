@@ -28,7 +28,7 @@ hugo --cleanDestinationDir --minify --panicOnWarning --printPathWarnings
 - `content/research/` holds the research overview and three research-area pages.
 - `content/leadership/` and `content/about/` hold the leadership and biography pages.
 - `content/publications/` holds one Markdown record per paper.
-- `content/writing/` holds Research Notes. The landing page is intentionally an honest empty state until a note is ready.
+- `content/writing/` holds Research Notes. The landing page lists the published bundles and paginates after ten notes.
 - `static/files/resume/Berkcan_Resume.pdf` is the public CV PDF.
 - `content/authors/admin/avatar.jpg` is the homepage portrait. Keep the image at this path.
 
@@ -61,6 +61,10 @@ The required fields are `title`, `date`, `authors`, `venue.name`, `venue.type`, 
 ### Publish a Research Note
 
 Create `content/writing/<slug>/index.md` with a title, date, description, and the note text. Hugo lists these page bundles on the Research Notes page, newest first, with each title, date, and summary linked accessibly. Keep a note focused on a research question, an engineering lesson, or a useful reading note, and link to its supporting publication or source. After publishing, adapt the note's main point and one takeaway into a LinkedIn post, then link back to the full note. Do not publish confidential work details or unapproved metrics.
+
+Visual notes use the same `visuals` front matter as publications. Place one `{{< research-visual >}}` shortcode at each figure position, in metadata order. Without shortcodes, figures follow the prose. `linkedin.thesis`, `linkedin.takeaways`, and `linkedin.sharing` are structured editorial metadata; they are not rendered as keywords. LinkedIn adaptations link to the canonical note.
+
+Prepare a sequence with `python scripts/research_assets.py sequence --source <approved.png> --recipe <recipe.yaml> --output-dir content/writing/<slug>/media`. Use the bundled Python with Pillow (inventory and extraction remain standard-library-only). Recipes use JSON syntax, a YAML 1.2 subset: a simple PNG `file` name and ordered `sequence` objects with a `label` and positive integer `duration` in milliseconds. Optional `focus` coordinates (`x`, `y`, `width`, `height`) are percentages within the whole image; optional `callout` is visible prose. The command validates and copies one PNG byte for byte, emits repeated local frame references and checksums, and refuses to overwrite an existing asset. Focus outlines and labels live in the DOM and CSS. Set `exact_pixels: true` on the sequence visual to load its original PNG directly. The CGD recipe is retained alongside its note; no scientific pixels are painted or cropped.
 
 ### Replace the CV
 

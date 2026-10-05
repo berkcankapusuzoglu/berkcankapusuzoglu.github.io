@@ -1,0 +1,9 @@
+{
+  "file": "cgd-overview.png",
+  "sequence": [
+    {"label": "Initial student response", "duration": 3000, "focus": {"x": 1.5, "y": 1.5, "width": 98, "height": 26.5}},
+    {"label": "Teacher critique", "duration": 3000, "focus": {"x": 60.5, "y": 34.5, "width": 39, "height": 23.5}},
+    {"label": "Refined answer and student training", "duration": 3000, "focus": {"x": 1.5, "y": 60.5, "width": 98, "height": 38}},
+    {"label": "Teacher-free inference", "duration": 3000, "callout": "Prompt only. No teacher or critique at inference. This is the deployment behavior described in Section 3.2, not a fourth row in Figure 1."}
+  ]
+}

@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import io
 import json
+import math
 import os
 from pathlib import Path, PurePosixPath
 import shutil
@@ -149,6 +150,75 @@ def prepare_figure(archive: Path, project_name: str, entry_name: str,
     return result
 
 
+def prepare_sequence(source: Path, recipe: Path, output_dir: Path) -> dict:
+    """Copy one exact PNG; return ordered DOM overlay metadata, never painted frames.
+
+    Recipes use JSON syntax, the deterministic YAML 1.2 subset used by this CLI.
+    Focus coordinates are percentages of the complete image (no cropping).
+    """
+    data = json.loads(Path(recipe).read_text(encoding='utf-8'))
+    frames = data.get('sequence') if isinstance(data, dict) else None
+    if not isinstance(frames, list) or len(frames) < 2:
+        raise ValueError('Sequence requires at least two ordered frames')
+    name = data.get('file', '')
+    if (not isinstance(name, str) or '/' in name or '\\' in name or ':' in name
+            or PurePosixPath(name).name != name or not name.endswith('.png')):
+        raise ValueError('Sequence file must be a simple PNG filename')
+    sequence = []
+    for frame in frames:
+        if not isinstance(frame, dict):
+            raise ValueError('Each frame must be an object')
+        label = frame.get('label')
+        duration = frame.get('duration')
+        if not isinstance(label, str) or not label.strip():
+            raise ValueError('Every frame needs a nonempty label')
+        if type(duration) is not int or duration <= 0:
+            raise ValueError('Every frame needs a positive integer duration in milliseconds')
+        item = {'file': f'media/{name}', 'label': label, 'duration': duration}
+        if 'focus' in frame:
+            focus = frame['focus']
+            if not isinstance(focus, dict) or set(focus) != {'x', 'y', 'width', 'height'}:
+                raise ValueError('Focus needs x, y, width and height percentages')
+            if any(type(value) not in (int, float) or not math.isfinite(value)
+                   for value in focus.values()):
+                raise ValueError('Focus coordinates must be finite numbers')
+            if (focus['x'] < 0 or focus['y'] < 0 or focus['width'] <= 0 or focus['height'] <= 0
+                    or focus['x'] + focus['width'] > 100 or focus['y'] + focus['height'] > 100):
+                raise ValueError('Focus must stay within the complete image')
+            item['focus'] = focus
+        if 'callout' in frame:
+            if not isinstance(frame['callout'], str) or not frame['callout'].strip():
+                raise ValueError('Callout must be nonempty text')
+            item['callout'] = frame['callout']
+        sequence.append(item)
+    output_dir = Path(output_dir).resolve()
+    writing = (REPOSITORY_ROOT / 'content/writing').resolve()
+    if not output_dir.is_relative_to(writing) or len(output_dir.relative_to(writing).parts) != 2 or output_dir.name != 'media':
+        raise ValueError('Output must be content/writing/<note>/media/')
+    output = output_dir / name
+    if output.exists():
+        raise FileExistsError(f'Output already exists: {output}')
+    from PIL import Image
+    with Image.open(source) as image:
+        image.load()
+        if image.format != 'PNG':
+            raise ValueError('Sequence source must be PNG')
+        width, height = image.size
+    checksum = archive_sha256(source)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=output_dir, suffix='.png', delete=False) as staging:
+        staged = Path(staging.name)
+    try:
+        shutil.copyfile(source, staged)
+        if archive_sha256(staged) != checksum:
+            raise ValueError('Source changed while copying; sequence was not published')
+        os.link(staged, output)
+    finally:
+        staged.unlink(missing_ok=True)
+    return {'file': f'media/{name}', 'width': width, 'height': height,
+            'source_sha256': checksum, 'sha256': archive_sha256(output), 'sequence': sequence}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -167,21 +237,28 @@ def main() -> None:
     prepare.add_argument('--dpi', type=int, default=180)
     prepare.add_argument('--page', type=int, default=1)
     prepare.add_argument('--replace', action='store_true')
+    sequence = commands.add_parser('sequence', help='Copy exact pixels and validate DOM focus metadata')
+    sequence.add_argument('--source', type=Path, required=True)
+    sequence.add_argument('--recipe', type=Path, required=True, help='JSON syntax (YAML 1.2 subset)')
+    sequence.add_argument('--output-dir', type=Path, required=True)
     args = parser.parse_args()
     try:
-        checksum = archive_sha256(args.archive)
-        if args.command == 'inventory':
+        if args.command == 'sequence':
+            result = prepare_sequence(args.source, args.recipe, args.output_dir)
+        elif args.command == 'inventory':
+            checksum = archive_sha256(args.archive)
             projects = inventory_archive(args.archive)
             result = {'archive_sha256': checksum, 'project_count': len(projects),
                       'figure_count': sum(p.figure_count for p in projects),
                       'motion_count': sum(p.motion_count for p in projects),
                       'projects': [asdict(project) for project in projects]}
         elif args.command == 'extract':
+            checksum = archive_sha256(args.archive)
             output = select_entry(args.archive, args.project, args.entry, args.output)
             result = {'archive_sha256': checksum, 'project': args.project,
                       'entry': args.entry, 'output': str(output), 'sha256': archive_sha256(output)}
         else:
-            result = {'archive_sha256': checksum, **prepare_figure(
+            result = {'archive_sha256': archive_sha256(args.archive), **prepare_figure(
                 args.archive, args.project, args.entry, args.output,
                 dpi=args.dpi, replace=args.replace, page=args.page)}
     except subprocess.CalledProcessError as error:

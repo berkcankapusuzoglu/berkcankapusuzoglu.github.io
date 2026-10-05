@@ -1,7 +1,8 @@
 {{ define "main" }}
-  <article class="page-content">
+  {{ partial "research-visual-validate.html" . }}
+  <article class="page-content{{ if eq .Section "writing" }} research-note{{ end }}">
     <header class="page-heading">
-      <p class="eyebrow">{{ .Section | humanize }}</p>
+      <p class="eyebrow">{{ if eq .Section "writing" }}Research Note{{ else }}{{ .Section | humanize }}{{ end }}</p>
       <h1>{{ .Title | default site.Title }}</h1>
       {{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}
     </header>
@@ -29,6 +30,18 @@
         {{ end }}
       </ul>
     {{ end }}
-    {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
+    {{ if .Params.visuals }}
+      {{ $parts := split .Content "<!-- research-visual -->" }}
+      {{ if and (gt (len $parts) 1) (ne (sub (len $parts) 1) (len .Params.visuals)) }}{{ errorf "Note %s needs one research-visual shortcode per visual" .File.Path }}{{ end }}
+      {{ if gt (len $parts) 1 }}
+        {{ range $index, $part := $parts }}
+          {{ with $part }}<div class="prose">{{ . | safeHTML }}</div>{{ end }}
+          {{ if lt $index (len $.Params.visuals) }}{{ partial "research-note-figure.html" (dict "Page" $ "Visual" (index $.Params.visuals $index)) }}{{ end }}
+        {{ end }}
+      {{ else }}
+        {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
+        {{ range .Params.visuals }}{{ partial "research-note-figure.html" (dict "Page" $ "Visual" .) }}{{ end }}
+      {{ end }}
+    {{ else }}{{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}{{ end }}
   </article>
 {{ end }}

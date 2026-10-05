@@ -357,6 +357,10 @@ class VisualMetadataTests(unittest.TestCase):
             [dict(self.visual(), sequence=[dict(label='First'), dict(label='Last', file='result.svg')])],
             [dict(self.visual(), sequence=[dict(label='First', file='https://example.org/frame.svg'), dict(label='Last', file='result.svg')])],
             [dict(self.visual(), sequence=[dict(label='First', file='missing.svg'), dict(label='Last', file='result.svg')])],
+            [dict(self.visual(), sequence=[dict(label='First', file='result.svg', duration=0), dict(label='Last', file='result.svg')])],
+            [dict(self.visual(), sequence=[dict(label='First', file='result.svg', duration='fast'), dict(label='Last', file='result.svg')])],
+            [dict(self.visual(), sequence=[dict(label='First', file='result.svg', focus=dict(x=95, y=0, width=10, height=10)), dict(label='Last', file='result.svg')])],
+            [dict(self.visual(), sequence=[dict(label='First', file='result.svg', focus=dict(x=0, y=0, width=10)), dict(label='Last', file='result.svg')])],
         )
         for visuals in cases:
             with self.subTest(visuals=visuals):
@@ -1150,17 +1154,44 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertRegex(text, r'(?:delft.{0,120}applied mathematics|applied mathematics.{0,120}delft)')
         self.assertRegex(text, r'(?:erlangen-nuremberg.{0,120}computational engineering|computational engineering.{0,120}erlangen-nuremberg)')
 
-    def test_research_notes_is_an_honest_empty_state(self):
+    def test_research_notes_lists_the_published_cgd_note(self):
         path = self.public / 'writing.html'
         self.assertTrue(path.exists(), 'missing generated route: /writing.html')
         document = _Document()
         document.feed(path.read_text(encoding='utf-8'))
         text = ' '.join(_accessible_text(node) for node in self.visible(document))
-        self.assertIn('no research notes have been published yet', text.casefold())
+        self.assertNotIn('no research notes have been published yet', text.casefold())
+        self.assertIn('Learning from mistakes with critique-guided distillation', text)
         hrefs = {node['attrs'].get('href', '') for node in document.nodes if node['tag'] == 'a'}
-        self.assertTrue(any('/research/reasoning-and-distillation.html' in href for href in hrefs))
-        self.assertTrue(any('/research/efficient-model-systems.html' in href for href in hrefs))
-        self.assertTrue(any('/research/trustworthy-ml.html' in href for href in hrefs))
+        self.assertTrue(any('/writing/critique-guided-distillation-refinement.html' in href for href in hrefs))
+
+    def test_cgd_note_renders_exact_pixel_sequence_and_result_with_provenance(self):
+        import hashlib
+        repo = Path(__file__).parents[1]
+        route = self.public / 'writing/critique-guided-distillation-refinement.html'
+        self.assertTrue(route.is_file(), 'CGD Research Note is missing')
+        document = _Document()
+        document.feed(route.read_text(encoding='utf-8'))
+        self.assertEqual(validate_html_document(route), [])
+        frames = [node for node in document.nodes if 'data-sequence-frame' in node['attrs']]
+        self.assertEqual(len(frames), 4)
+        self.assertTrue(all('hidden' in node['attrs'] for node in frames[:-1]))
+        self.assertIn('data-sequence-poster', frames[-1]['attrs'])
+        images = [node for node in document.nodes if node['tag'] == 'img' and
+                  node['attrs'].get('src', '').endswith('cgd-overview.png')]
+        self.assertEqual(len(images), 4)
+        self.assertEqual(len({node['attrs']['src'] for node in images}), 1)
+        self.assertEqual(len([node for node in document.nodes if 'data-sequence-focus' in node['attrs']]), 3)
+        self.assertIn('Prompt only. No teacher or critique at inference.',
+                      ' '.join(_accessible_text(node) for node in self.visible(document)))
+        self.assertEqual(len([node for node in document.nodes if 'data-research-visual' in node['attrs']]), 2)
+        self.assertTrue(any(node['tag'] == 'script' and 'research-visuals.min.' in
+                            node['attrs'].get('src', '') for node in document.nodes))
+        for name in ('cgd-overview.png', 'cgd-accuracy.png'):
+            source = repo / 'content/publications/2026-critique-guided-distillation/media' / name
+            output = repo / 'content/writing/critique-guided-distillation-refinement/media' / name
+            self.assertEqual(hashlib.sha256(output.read_bytes()).digest(),
+                             hashlib.sha256(source.read_bytes()).digest())
 
     def test_writing_template_lists_pages_with_accessible_metadata(self):
         template = (Path(__file__).parents[1] / 'layouts/writing/list.html').read_text(

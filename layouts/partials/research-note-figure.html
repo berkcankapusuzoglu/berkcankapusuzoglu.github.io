@@ -1,0 +1,3 @@
+<p class="research-visual-hint">Scroll the figure sideways to read its labels, or open the full-size image below.</p>
+{{ partial "research-figure.html" (dict "Page" .Page "Visual" .Visual "Context" "note") }}
+<p class="research-visual-access"><a href="{{ (.Page.Resources.GetMatch .Visual.file).RelPermalink }}">Open full-size figure</a>{{ if eq .Visual.id "cgd-accuracy" }}. Some numeric labels touch in the source figure. Compare the bars here and use the full-size figure for closer inspection.{{ end }}</p>

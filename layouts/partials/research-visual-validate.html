@@ -24,6 +24,19 @@
       {{ errorf "Publication %s visual %s sequence requires at least two frames" $page.File.Path $id }}
     {{ end }}
     {{ range $index, $frame := $visual.sequence }}
+      {{ if isset $frame "duration" }}
+        {{ if eq (len (findRE `^[1-9][0-9]*$` (printf "%v" $frame.duration))) 0 }}{{ errorf "Publication %s visual %s sequence frame %d needs positive integer duration" $page.File.Path $id $index }}{{ end }}
+      {{ end }}
+      {{ if isset $frame "focus" }}
+        {{ $focus := $frame.focus }}
+        {{ $valid := true }}
+        {{ range $coordinate := slice "x" "y" "width" "height" }}
+          {{ if or (not (isset $focus $coordinate)) (eq (len (findRE `^[0-9]+(?:\.[0-9]+)?$` (printf "%v" (index $focus $coordinate)))) 0) }}
+            {{ $valid = false }}{{ errorf "Publication %s visual %s sequence frame %d needs numeric focus %s" $page.File.Path $id $index $coordinate }}
+          {{ end }}
+        {{ end }}
+        {{ if $valid }}{{ if or (le (float $focus.width) 0) (le (float $focus.height) 0) (gt (add (float $focus.x) (float $focus.width)) 100) (gt (add (float $focus.y) (float $focus.height)) 100) }}{{ errorf "Publication %s visual %s sequence frame %d focus exceeds image bounds" $page.File.Path $id $index }}{{ end }}{{ end }}
+      {{ end }}
       {{ if not (strings.TrimSpace ($frame.label | default "")) }}
         {{ errorf "Publication %s visual %s sequence frame %d missing label" $page.File.Path $id $index }}
       {{ end }}

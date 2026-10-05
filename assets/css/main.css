@@ -90,6 +90,9 @@ h2, h3 { line-height: 1.2; }
 .research-visual-source { color: var(--muted); font-size: .9rem; }
 .research-visual-access { max-width: 72ch; margin: -1rem 0 2.5rem; font-size: .95rem; }
 .research-sequence-frames [hidden] { display: none; }
+.research-sequence-image { position: relative; }
+.research-sequence-focus { position: absolute; border: 3px solid var(--signal); border-radius: .25rem; pointer-events: none; }
+.research-sequence-callout { max-width: 72ch; padding: .75rem 1rem; border-left: 3px solid var(--signal); background: var(--surface); }
 .research-sequence-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .5rem 1.75rem; margin: 1rem 0; padding-left: 1.5rem; color: var(--muted); font-size: .95rem; }
 .research-sequence-steps li { padding: .35rem .25rem; border-bottom: 2px solid var(--line); }
 .research-sequence-steps [aria-current="step"] { color: var(--ink); border-color: var(--signal); font-weight: 700; }
@@ -119,8 +122,8 @@ h2, h3 { line-height: 1.2; }
   .research-sequence-steps { grid-template-columns: 1fr; }
   .research-sequence-controls { align-items: flex-start; flex-direction: column; }
   .research-visual-hint { display: block; max-width: 72ch; color: var(--muted); font-size: .9rem; }
-  .publication-detail .research-visual-plot picture { min-width: 64rem; }
-  .publication-detail .research-visual-plot img[src$="cgd-accuracy.png"] { min-width: 90rem; }
+  .publication-detail .research-visual-plot picture, .research-note .research-visual-plot picture, .research-note .research-sequence-image { min-width: 64rem; }
+  .publication-detail .research-visual-plot img[src$="cgd-accuracy.png"], .research-note .research-visual-plot img[src$="cgd-accuracy.png"] { min-width: 90rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -136,7 +139,7 @@ h2, h3 { line-height: 1.2; }
   .research-visual { break-inside: avoid; }
   .research-visual-hint { display: none; }
   .research-visual-plot { overflow: visible; }
-  .publication-detail .research-visual-plot picture, .publication-detail .research-visual-plot img[src$="cgd-accuracy.png"] { min-width: 0; }
+  .publication-detail .research-visual-plot picture, .publication-detail .research-visual-plot img[src$="cgd-accuracy.png"], .research-note .research-visual-plot picture, .research-note .research-visual-plot img[src$="cgd-accuracy.png"], .research-note .research-sequence-image { min-width: 0; }
   .research-sequence-frames [data-sequence-frame] { display: none !important; }
   .research-sequence-frames [data-sequence-poster] { display: block !important; }
   .research-sequence-controls, .research-sequence-steps, .research-sequence-note { display: none !important; }

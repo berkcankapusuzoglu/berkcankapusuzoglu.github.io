@@ -243,5 +243,111 @@ class ResearchAssetsTests(unittest.TestCase):
         self.assertFalse(self.render_temp.exists())
 
 
+class SequenceTests(unittest.TestCase):
+    def setUp(self):
+        from PIL import Image
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.source = self.root / 'source.png'
+        Image.new('RGB', (200, 100), 'white').save(self.source)
+        self.recipe = self.root / 'recipe.yaml'
+        self.output = self.root / 'content/writing/note/media'
+        self.data = {'file': 'diagram.png', 'sequence': [
+            {'label': 'Initial response', 'duration': 1800,
+             'focus': {'x': 2, 'y': 3, 'width': 96, 'height': 30}},
+            {'label': 'Teacher-free inference', 'duration': 2400,
+             'callout': 'Prompt only; no teacher at inference.'}]}
+
+    def prepare(self):
+        self.assertTrue(callable(getattr(research_assets, 'prepare_sequence', None)),
+                        'Exact-pixel sequence preparation is not implemented')
+        self.recipe.write_text(json.dumps(self.data), encoding='utf-8')
+        with patch.object(research_assets, 'REPOSITORY_ROOT', self.root):
+            return research_assets.prepare_sequence(self.source, self.recipe, self.output)
+
+    def test_sequence_keeps_order_dimensions_and_exact_source_hash(self):
+        result = self.prepare()
+        self.assertEqual((result['width'], result['height']), (200, 100))
+        self.assertEqual([frame['label'] for frame in result['sequence']],
+                         ['Initial response', 'Teacher-free inference'])
+        self.assertEqual([frame['file'] for frame in result['sequence']],
+                         ['media/diagram.png', 'media/diagram.png'])
+        self.assertEqual([frame['duration'] for frame in result['sequence']], [1800, 2400])
+        self.assertEqual(result['sequence'][0]['focus'],
+                         {'x': 2, 'y': 3, 'width': 96, 'height': 30})
+        self.assertEqual(hashlib.sha256((self.output / 'diagram.png').read_bytes()).hexdigest(),
+                         hashlib.sha256(self.source.read_bytes()).hexdigest())
+        self.assertEqual(result['sha256'], result['source_sha256'])
+        self.assertEqual(list(self.output.iterdir()), [self.output / 'diagram.png'])
+
+    def test_sequence_rejects_bad_recipe_before_copying(self):
+        cases = [({}, 'at least two'),
+                 ({'sequence': [self.data['sequence'][0]]}, 'at least two'),
+                 ({'file': '../outside.png'}, 'filename'),
+                 ({'file': 'C:\\outside.png'}, 'filename'),
+                 ({'file': 'nested/diagram.png'}, 'filename'),
+                 ({'file': 'diagram.jpg'}, 'filename')]
+        for updates, message in cases:
+            with self.subTest(updates=updates):
+                original = self.data
+                self.data = {} if not updates else {**original, **updates}
+                with self.assertRaisesRegex(ValueError, message):
+                    self.prepare()
+                self.data = original
+        self.assertFalse(self.output.exists())
+
+    def test_sequence_rejects_blank_labels_bad_durations_and_out_of_bounds_focus(self):
+        for updates in ({'label': ''}, {'duration': 0}, {'duration': -1},
+                        {'duration': True}, {'duration': '1800'},
+                        {'focus': {'x': -1, 'y': 0, 'width': 100, 'height': 10}},
+                        {'focus': {'x': 80, 'y': 0, 'width': 30, 'height': 10}},
+                        {'focus': {'x': 0, 'y': 99, 'width': 30, 'height': 10}},
+                        {'focus': {'x': 0, 'y': 0, 'width': 0, 'height': 10}},
+                        {'focus': {'x': float('nan'), 'y': 0, 'width': 30, 'height': 10}},
+                        {'focus': {'x': 0, 'y': 0, 'width': 30}}, {'callout': ''}):
+            with self.subTest(updates=updates):
+                original = self.data['sequence'][0]
+                self.data['sequence'][0] = {**original, **updates}
+                with self.assertRaises(ValueError):
+                    self.prepare()
+                self.data['sequence'][0] = original
+        self.assertFalse(self.output.exists())
+
+    def test_sequence_preserves_existing_output_and_rejects_non_png(self):
+        self.output.mkdir(parents=True)
+        target = self.output / 'diagram.png'
+        target.write_bytes(b'existing asset')
+        with self.assertRaises(FileExistsError):
+            self.prepare()
+        self.assertEqual(target.read_bytes(), b'existing asset')
+        target.unlink()
+        self.source.write_bytes(b'not a png')
+        with self.assertRaises(OSError):
+            self.prepare()
+        self.assertEqual(list(self.output.iterdir()), [])
+
+    def test_sequence_rejects_destination_outside_a_note_media_bundle(self):
+        for output in (self.root / 'media', self.root / 'content/writing',
+                       self.root / 'content/writing/note/assets'):
+            with self.subTest(output=output):
+                self.output = output
+                with self.assertRaises(ValueError):
+                    self.prepare()
+
+    def test_sequence_cli_accepts_yaml_12_json_recipe_and_reports_exact_copy(self):
+        repo = Path(__file__).parents[1]
+        self.recipe.write_text(json.dumps(self.data), encoding='utf-8')
+        with tempfile.TemporaryDirectory(dir=repo / 'content/writing') as directory:
+            output = Path(directory) / 'media'
+            result = subprocess.run([sys.executable, 'scripts/research_assets.py', 'sequence',
+                                     '--source', str(self.source), '--recipe', str(self.recipe),
+                                     '--output-dir', str(output)], cwd=repo,
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)['source_sha256'],
+                             hashlib.sha256((output / 'diagram.png').read_bytes()).hexdigest())
+
+
 if __name__ == '__main__':
     unittest.main()

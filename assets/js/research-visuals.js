@@ -10,6 +10,7 @@
     let index = frames.length - 1;
     let timer = null;
     let playing = false;
+    const duration = () => Number(frames[index].dataset.duration) || 1800;
     const describe = (suffix = '') => {
       status.textContent = `Step ${index + 1} of ${frames.length}: ${frames[index].dataset.label}.${suffix ? ` ${suffix}` : ''}`;
       button.textContent = motion.matches ? 'Next step' : playing ? 'Pause sequence' : 'Play sequence';
@@ -33,7 +34,7 @@
       if (motion.matches || document.hidden) { pause(); return; }
       show(index + 1);
       if (index === frames.length - 1) pause('Final frame. Sequence complete.');
-      else timer = setTimeout(advance, 1800);
+      else timer = setTimeout(advance, duration());
     };
 
     button.disabled = false;
@@ -48,7 +49,7 @@
         if (index === frames.length - 1) show(0);
         playing = true;
         describe('Playing.');
-        timer = setTimeout(advance, 1800);
+        timer = setTimeout(advance, duration());
       }
     });
     motion.addEventListener('change', () => pause(motion.matches ? 'Reduced motion: use Next step.' : 'Paused.'));
