@@ -1226,6 +1226,63 @@ class GeneratedShellTests(unittest.TestCase):
         hrefs = {node['attrs'].get('href', '') for node in document.nodes if node['tag'] == 'a'}
         self.assertTrue(any('/writing/critique-guided-distillation-refinement.html' in href for href in hrefs))
 
+    def test_blog_lists_three_medium_archive_stories(self):
+        document = self.all_pages['writing.html']
+        text = ' '.join(_accessible_text(node) for node in self.visible(document))
+        expected = {
+            'Physics-Informed Machine Learning (PIML): Application to Additive Manufacturing':
+                '/writing/physics-informed-machine-learning-additive-manufacturing.html',
+            'Uncertainty Quantification (UQ) and Sensitivity Analysis: Part I':
+                '/writing/uncertainty-quantification-sensitivity-analysis-part-i.html',
+            'Multi-objective Optimization Under Uncertainty':
+                '/writing/multi-objective-optimization-under-uncertainty.html',
+        }
+        for title, route in expected.items():
+            with self.subTest(title=title):
+                self.assertIn(title, text)
+                self.assertTrue(any(node['tag'] == 'a' and route in node['attrs'].get('href', '')
+                                    for node in document.nodes))
+
+    def test_medium_archive_stories_link_to_the_canonical_originals(self):
+        expected = {
+            'writing/physics-informed-machine-learning-additive-manufacturing.html':
+                'https://medium.com/@berkcan1992/physics-informed-machine-learning-piml-application-to-additive-manufacturing-3ddd2324059a',
+            'writing/uncertainty-quantification-sensitivity-analysis-part-i.html':
+                'https://medium.com/@berkcan1992/uncertainty-quantification-uq-and-sensitivity-analysis-part-i-2e7078e9136c',
+            'writing/multi-objective-optimization-under-uncertainty.html':
+                'https://medium.com/@berkcan1992/multi-objective-optimization-under-uncertainty-858592e662ce',
+        }
+        for route, original in expected.items():
+            with self.subTest(route=route):
+                path = self.public / route
+                self.assertTrue(path.is_file(), f'missing generated route: /{route}')
+                document = _Document()
+                document.feed(path.read_text(encoding='utf-8'))
+                self.assertEqual(validate_html_document(path), [])
+                text = ' '.join(_accessible_text(node) for node in self.visible(document))
+                self.assertIn('Originally published on Medium in 2022', text)
+                self.assertTrue(any(node['tag'] == 'a' and
+                                    node['attrs'].get('href') == original and
+                                    'Read the original on Medium' in _accessible_name(node, {})
+                                    for node in document.nodes))
+
+    def test_owner_editing_guide_and_blog_archetype_are_available(self):
+        repo = Path(__file__).parents[1]
+        readme = (repo / 'README.md').read_text(encoding='utf-8')
+        guide = repo / 'HOW_TO_EDIT.md'
+        archetype = repo / 'archetypes' / 'writing.md'
+        self.assertTrue(guide.is_file(), 'HOW_TO_EDIT.md is missing')
+        self.assertTrue(archetype.is_file(), 'Blog archetype is missing')
+        self.assertIn('[How to edit the site](HOW_TO_EDIT.md)', readme)
+        guide_text = guide.read_text(encoding='utf-8')
+        for instruction in ('data/profile.yaml', 'content/about/_index.md',
+                            'content/publications/', 'content/writing/',
+                            'hugo new content writing/my-post/index.md', 'hugo server'):
+            self.assertIn(instruction, guide_text)
+        archetype_text = archetype.read_text(encoding='utf-8')
+        for field in ('title:', 'date:', 'draft: true', 'description:', 'summary:'):
+            self.assertIn(field, archetype_text)
+
     def test_cgd_note_renders_exact_pixel_sequence_and_result_with_provenance(self):
         import hashlib
         repo = Path(__file__).parents[1]

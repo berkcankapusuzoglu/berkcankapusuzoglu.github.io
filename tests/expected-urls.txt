@@ -40,4 +40,7 @@
 /tags/page/1.html
 /writing.html
 /writing/critique-guided-distillation-refinement.html
+/writing/multi-objective-optimization-under-uncertainty.html
+/writing/physics-informed-machine-learning-additive-manufacturing.html
+/writing/uncertainty-quantification-sensitivity-analysis-part-i.html
 /writing/page/1.html

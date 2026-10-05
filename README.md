@@ -2,6 +2,8 @@
 
 This repository builds the public portfolio with Hugo 0.145.0. The production build uses Hugo and does not need Node.js.
 
+Planning a content change? Start with [How to edit the site](HOW_TO_EDIT.md). It covers the homepage, navigation, About page, publications, and Blog posts.
+
 ## Prerequisites
 
 - Git
