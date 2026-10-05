@@ -15,8 +15,8 @@ visuals:
   - id: ppl-accuracy
     file: media/ppl-accuracy.png
     role: lead
-    alt: "Three scatter plots compare WikiText-2 perplexity with GSM8K, MMLU and GPQA-Diamond accuracy across five pruning methods at r = 0.25; correlations are positive or near zero."
-    caption: "Perplexity does not reliably predict task accuracy across pruning configurations under over-dispersed routing. The comparison covers five methods at r = 0.25 on GSM8K, MMLU and GPQA-Diamond."
+    alt: "Three scatter plots compare WikiText-2 perplexity with GSM8K, MMLU and GPQA-Diamond accuracy across four pruning methods at r = 0.25 plus an unpruned baseline; correlations are positive or near zero."
+    caption: "Perplexity does not reliably predict task accuracy across pruning configurations under over-dispersed routing. The comparison covers four pruning methods at r = 0.25 plus an unpruned baseline on GSM8K, MMLU and GPQA-Diamond."
     takeaway: "Check the tasks you need to preserve: lower WikiText-2 perplexity does not consistently identify the more accurate pruning method in this comparison."
     source_label: "Berkcan Kapusuzoglu et al., When Load-Balancing Goes Too Far (2026), Figure 2"
     source_url: "https://arxiv.org/abs/2609.04453v1"

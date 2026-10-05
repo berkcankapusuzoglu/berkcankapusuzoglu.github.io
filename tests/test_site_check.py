@@ -1007,9 +1007,30 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertEqual(figures[0]['attrs'].get('data-research-homepage'), 'true')
         images = [n for n in self.visible(document) if n['tag'] == 'img' and '/media/' in n['attrs'].get('src', '')]
         self.assertEqual(len(images), 1)
-        self.assertIn('/2026-critique-guided-distillation/media/cgd-overview.png', images[0]['attrs']['src'])
+        self.assertIn('/2026-critique-guided-distillation/media/cgd-overview', images[0]['attrs']['src'])
         for card in [n for n in self.visible(document) if 'data-publication-card' in n['attrs']][1:]:
             self.assertFalse(any(n['tag'] == 'img' for n in _descendants(card)))
+
+    def test_homepage_research_fallback_and_candidates_meet_byte_budget(self):
+        doc = self.pages['index.html']
+        figures = [node for node in doc.nodes if 'data-research-visual' in node['attrs']]
+        self.assertEqual(len(figures), 1)
+        paths = []
+        for node in _descendants(figures[0]):
+            if node['tag'] == 'img':
+                paths.append(node['attrs']['src'])
+            if node['tag'] == 'source':
+                paths.extend(candidate.strip().split()[0]
+                             for candidate in node['attrs']['srcset'].split(','))
+        self.assertTrue(paths)
+        self.assertTrue(any(node['tag'] == 'a' and
+                            node['attrs'].get('href', '').endswith('/media/cgd-overview.png')
+                            and _accessible_text(node).strip() == 'Open full-size figure'
+                            for node in doc.nodes))
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertLessEqual((self.public / path.lstrip('/')).stat().st_size,
+                                     250000)
 
     def test_featured_paper_figures_render_in_story_order_with_visible_interpretation(self):
         expected = {
@@ -1057,15 +1078,27 @@ class GeneratedShellTests(unittest.TestCase):
             self.assertTrue(any(n['attrs'].get('href') == 'https://arxiv.org/abs/2609.04453' for n in _descendants(papers[0])))
 
     def test_homepage_proof_strip_uses_verified_publication_facts(self):
-        text = ' '.join(_accessible_text(node) for node in self.visible(self.pages['index.html']))
+        strip = next(node for node in self.visible(self.pages['index.html'])
+                     if node['attrs'].get('aria-label') == 'Research profile')
+        text = ' '.join(_accessible_text(node) for node in _descendants(strip)
+                        if node['tag'] == 'p')
         self.assertIn('PMLR 306', text)
-        self.assertIn('arXiv preprint', text)
+        self.assertIn('NeurIPS 2026 Workshop on On-Device Intelligence', text)
+        self.assertIn('Accepted', text)
+        self.assertNotIn('arXiv preprint', text)
         self.assertIn('IEEE Big Data 2025', text)
         self.assertNotIn('Paper-backed research connected to engineering practice', text)
 
     def test_about_page_states_doctoral_field(self):
         about = (self.public / 'about.html').read_text(encoding='utf-8')
         self.assertIn('Ph.D. in Civil Engineering', about)
+
+    def test_leadership_renders_owner_supplied_policy_distillation_example(self):
+        paragraphs = [_accessible_text(node) for node in self.visible(self.all_pages['leadership.html'])
+                      if node['tag'] == 'p' and 'MOPD' in _accessible_text(node)]
+        self.assertEqual(paragraphs, [
+            'In my latest role, I worked on policy distillation (OPD) and multi-teacher OPD '
+            '(MOPD), improving internal model performance on agentic tasks.'])
 
     def test_homepage_reuses_portrait_with_accessible_alt_text(self):
         document = self.pages['index.html']

@@ -22,7 +22,7 @@ themes:
 proof_points:
   - label: PMLR 306
     value: Critique-Guided Distillation for Robust Reasoning via Refinement
-  - label: arXiv preprint
+  - label: NeurIPS 2026 Workshop on On-Device Intelligence · Accepted
     value: Expert pruning in over-dispersed mixture-of-experts models
   - label: IEEE Big Data 2025
     value: SPEAR-MM for efficient financial language model adaptation

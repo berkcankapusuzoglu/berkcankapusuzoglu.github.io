@@ -26,7 +26,7 @@ On another machine, point `$assetPython` to a Python 3.13 interpreter with Pillo
    & $assetPython scripts/research_assets.py inventory --archive $archive
    ```
 
-   Output is deterministic JSON (also a YAML 1.2 subset), including project/figure counts, paths, sizes and SHA-256 checksums. The current archive contains 12 projects and 234 figures. Copy the exact case-sensitive project and entry names.
+   Output is deterministic JSON (also a YAML 1.2 subset), including project/figure counts, paths, sizes and SHA-256 checksums. The current archive contains 12 projects and 234 figures. Copy the case-sensitive project and entry names from inventory. Extraction resolves normalized paths such as `./figures/a.pdf` back to the original member; duplicate members with the same normalized path are refused as ambiguous.
 
 2. Prepare one named PDF page. This example uses an approved CGD entry and a new output name, so it cannot overwrite the current lead image:
 
@@ -98,6 +98,6 @@ Verify numerical claims, benchmarks, experimental settings, author order, venue/
 - Write informative alt text describing relationships or trends, with detailed interpretation in the caption/takeaway. Do not use a filename or repeat the caption verbatim.
 - Explain color-coded distinctions with labels or text so color alone is unnecessary. Check contrast and keyboard focus.
 - Confirm visible source attribution and the specific reuse license/permission. Inspect exported annotations for private comments, internal results, employer/customer details and personal information.
-- Inspect generated image paths in `public/`: keep the largest delivered homepage image at or below 250 KB and publication images at or below 500 KB. Hugo makes WebP widths up to 640/960/1440 and retains the original fallback; check that fallback too. `exact_pixels: true` skips derivatives, so its original PNG is the delivered asset. These byte limits require manual review.
+- Inspect generated image paths in `public/`: keep the largest delivered homepage image at or below 250 KB and publication images at or below 500 KB. Hugo makes WebP widths up to 640/960/1440. The homepage uses a 1440px high-quality JPEG fallback for a larger PNG; other figures retain their original fallback. The full-size link always retains the approved source. Check fallback bytes too. `exact_pixels: true` skips derivatives, so its original PNG is the delivered asset. The homepage budget has a regression test; remaining byte limits require manual review.
 - For a sequence, test Play/Pause with keyboard only, no JavaScript, reduced motion and print. The last frame must explain the method as a static poster. See [the note guide](publishing-a-visual-note.md).
 - Check `git status`: no ZIPs, source PDFs, scratch exports or unreviewed figures should be staged. Keep provenance in the manifest and only reviewed web images in page bundles.

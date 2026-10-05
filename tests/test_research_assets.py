@@ -53,6 +53,33 @@ class ResearchAssetsTests(unittest.TestCase):
         self.assertEqual(destination.read_bytes(), b'abc')
         self.assertEqual(list(destination.parent.iterdir()), [destination])
 
+    def test_inventory_paths_round_trip_to_original_zip_members(self):
+        for project, entry in (('./A project.zip', './figures/a.pdf'),
+                               ('folder\\A project.zip', 'figures\\a.pdf')):
+            with self.subTest(project=project, entry=entry):
+                self.make_archive({project: {entry: b'abc'}})
+                record = inventory_archive(self.archive)[0]
+                destination = self.root / 'output' / 'figure.pdf'
+                try:
+                    select_entry(self.archive, record.name, record.figures[0].path,
+                                 destination)
+                except KeyError as error:
+                    self.fail(f'Inventory path cannot select its original member: {error}')
+                self.assertEqual(destination.read_bytes(), b'abc')
+
+    def test_ambiguous_normalized_members_are_rejected_before_writing(self):
+        for projects in ({'A project.zip': {'figures/a.pdf': b'first',
+                                            './figures/a.pdf': b'second'}},
+                         {'A project.zip': {'figures/a.pdf': b'first'},
+                          './A project.zip': {'figures/a.pdf': b'second'}}):
+            with self.subTest(projects=projects):
+                self.make_archive(projects)
+                destination = self.root / 'output' / 'figure.pdf'
+                with self.assertRaisesRegex(ValueError, 'Ambiguous'):
+                    select_entry(self.archive, 'A project.zip', 'figures/a.pdf',
+                                 destination)
+                self.assertFalse(destination.parent.exists())
+
     def test_missing_project_does_not_create_destination_parent(self):
         destination = self.root / 'output' / 'figure.pdf'
         with self.assertRaises(KeyError):

@@ -48,6 +48,16 @@ def archive_sha256(archive: Path) -> str:
         return hashlib.file_digest(source, 'sha256').hexdigest()
 
 
+def _normalized_member(archive: zipfile.ZipFile, name: str) -> zipfile.ZipInfo:
+    matches = [entry for entry in archive.infolist()
+               if _safe_path(entry.filename) == name]
+    if not matches:
+        raise KeyError(f'No archive member matches {name!r}')
+    if len(matches) != 1:
+        raise ValueError(f'Ambiguous normalized archive path: {name!r}')
+    return matches[0]
+
+
 def inventory_archive(archive: Path) -> list[ProjectRecord]:
     """Return sorted metadata; nested projects are read in memory, never unpacked."""
     projects = []
@@ -80,8 +90,9 @@ def select_entry(archive: Path, project_name: str, entry_name: str,
     project_name = _safe_path(project_name)
     entry_name = _safe_path(entry_name)
     with zipfile.ZipFile(archive) as outer:
-        with zipfile.ZipFile(io.BytesIO(outer.read(project_name))) as inner:
-            entry = inner.getinfo(entry_name)
+        project = _normalized_member(outer, project_name)
+        with zipfile.ZipFile(io.BytesIO(outer.read(project))) as inner:
+            entry = _normalized_member(inner, entry_name)
             if entry.is_dir():
                 raise ValueError(f'Selected entry is a directory: {entry_name!r}')
             payload = inner.read(entry)

@@ -5,6 +5,10 @@ description: "A practical approach to technical ownership, research direction, a
 
 I approach technical leadership as the work of giving good research a clear path into dependable systems.
 
+## Policy distillation for agentic tasks
+
+In my latest role, I worked on policy distillation (OPD) and multi-teacher OPD (MOPD), improving internal model performance on agentic tasks.
+
 ## Set a research direction
 
 Start with a concrete problem, make the assumptions visible, and choose questions that can be answered with evidence. A clear direction helps teams connect exploratory research to a product or platform need without overstating what the results show.

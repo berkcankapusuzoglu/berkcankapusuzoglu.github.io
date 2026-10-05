@@ -1,4 +1,5 @@
 {{- $resource := .Page.Resources.GetMatch .File -}}
+{{- $fallback := $resource -}}
 {{- $width := 0 -}}{{- $height := 0 -}}
 {{- $sources := slice -}}
 {{- if eq $resource.MediaType.SubType "svg" -}}
@@ -29,6 +30,10 @@
     {{- end -}}
   {{- end -}}{{- end -}}
 {{- end -}}
+{{- if and .Eager (not .Exact) (eq $resource.MediaType.SubType "png") (gt $width 1440) -}}
+  {{- $fallback = $resource.Resize "1440x jpg q90" -}}
+  {{- $width = $fallback.Width -}}{{- $height = $fallback.Height -}}
+{{- end -}}
 {{- if or (le $width 0) (le $height 0) -}}
   {{- errorf "Publication %s visual resource %s needs positive dimensions or an SVG viewBox" .Page.File.Path .File -}}
 {{- end -}}
@@ -38,5 +43,5 @@
 {{- end -}}
 <picture>
   {{- with $sources }}<source type="image/webp" srcset="{{ delimit . ", " }}" sizes="{{ $sizes }}">{{ end }}
-  <img src="{{ $resource.RelPermalink }}" alt="{{ .Alt }}" width="{{ $width }}" height="{{ $height }}" loading="{{ if .Eager }}eager{{ else }}lazy{{ end }}"{{ if .Eager }} fetchpriority="high"{{ end }} decoding="async">
+  <img src="{{ $fallback.RelPermalink }}" alt="{{ .Alt }}" width="{{ $width }}" height="{{ $height }}" loading="{{ if .Eager }}eager{{ else }}lazy{{ end }}"{{ if .Eager }} fetchpriority="high"{{ end }} decoding="async">
 </picture>
