@@ -12,7 +12,7 @@ const port = fixture ? 8081 : 8080;
 const origin = `http://127.0.0.1:${port}`;
 let browserPath = process.env.PUPPETEER_EXECUTABLE_PATH;
 if (!browserPath) {
-  try { browserPath = puppeteer.executablePath(); } catch { /* Use an installed browser below. */ }
+  try { browserPath = await puppeteer.executablePath(); } catch { /* Use an installed browser below. */ }
   if ((!browserPath || !existsSync(browserPath)) && process.platform === 'win32') {
     browserPath = ['C:/Program Files/Google/Chrome/Application/chrome.exe',
       'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',

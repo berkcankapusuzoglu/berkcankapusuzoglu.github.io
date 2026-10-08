@@ -490,6 +490,10 @@ class ResearchComponentTests(unittest.TestCase):
                 if expected:
                     self.assertRegex(sequence_scripts[0], r'research-visuals\.min\.[a-f0-9]+\.js$')
 
+    def test_browser_path_resolution_awaits_puppeteer_api(self):
+        source = (self.repo / 'scripts' / 'check_a11y.mjs').read_text(encoding='utf-8')
+        self.assertRegex(source, r'browserPath\s*=\s*await\s+puppeteer\.executablePath\(\)')
+
     def test_controller_syntax_and_browser_motion_keyboard_print_contract(self):
         self.page('publications/sequence.html')
         syntax = subprocess.run(['node', '--check', 'assets/js/research-visuals.js'],
