@@ -1,0 +1,13 @@
+{{- $src := .Get "src" -}}
+{{- $alt := .Get "alt" -}}
+{{- $caption := .Get "caption" -}}
+{{- $sourceURL := .Get "source_url" -}}
+{{- $image := .Page.Resources.GetMatch $src -}}
+{{- if not $image -}}{{- errorf "Archive figure %q was not found for %s" $src .Page.File.Path -}}{{- end -}}
+{{- if not $alt -}}{{- errorf "Archive figure %q needs alt text in %s" $src .Page.File.Path -}}{{- end -}}
+{{- if not $caption -}}{{- errorf "Archive figure %q needs a caption in %s" $src .Page.File.Path -}}{{- end -}}
+{{- if not $sourceURL -}}{{- errorf "Archive figure %q needs a source URL in %s" $src .Page.File.Path -}}{{- end -}}
+<figure class="article-figure">
+  <img src="{{ $image.RelPermalink }}" width="{{ $image.Width }}" height="{{ $image.Height }}" loading="lazy" decoding="async" alt="{{ $alt }}">
+  <figcaption>{{ $caption }} <a href="{{ $sourceURL }}">Original Medium article</a>.</figcaption>
+</figure>

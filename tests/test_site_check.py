@@ -655,7 +655,7 @@ class GeneratedShellTests(unittest.TestCase):
             '2026-critique-guided-distillation.html': {
                 'sameAs': ['https://proceedings.mlr.press/v306/kapusuzoglu26a.html'],
                 'part_type': 'CreativeWorkSeries',
-                'part_name': 'Proceedings of the 43rd International Conference on Machine Learning, PMLR 306',
+                'part_name': 'International Conference on Machine Learning (ICML 2026)',
             },
             '2026-load-balancing-expert-pruning.html': {
                 'sameAs': ['https://arxiv.org/abs/2609.04453'],
@@ -912,6 +912,7 @@ class GeneratedShellTests(unittest.TestCase):
     def test_publication_layout_wraps_long_content(self):
         css = ''.join(p.read_text(encoding='utf-8') for p in self.public.glob('css/main*.css'))
         self.assertRegex(css, r'\.publication[^}]*overflow-wrap:\s*anywhere')
+        self.assertRegex(css, r'\.publication-entry h2\{[^}]*max-width:64ch')
 
     def test_featured_fixture_uses_explicit_weights_not_dates(self):
         expected = ['2026-critique-guided-distillation',
@@ -992,7 +993,7 @@ class GeneratedShellTests(unittest.TestCase):
         self.assertEqual(_accessible_name(headings[0], {}).casefold(),
                          'I lead research and engineering for efficient, reliable language models.'.casefold())
         title = next(node for node in document.nodes if node['tag'] == 'title')
-        self.assertEqual(_accessible_name(title, {}).casefold(), 'Staff Applied Researcher - AI Foundations'.casefold())
+        self.assertEqual(_accessible_name(title, {}).casefold(), 'Applied Scientist'.casefold())
         links = [node for node in visible if node['tag'] == 'a']
         names = {_accessible_name(node, {}).casefold() for node in links}
         self.assertTrue({name.casefold() for name in
@@ -1097,17 +1098,47 @@ class GeneratedShellTests(unittest.TestCase):
             self.assertTrue(any(n['attrs'].get('data-venue-type') == 'workshop' for n in _descendants(papers[0])))
             self.assertTrue(any(n['attrs'].get('href') == 'https://arxiv.org/abs/2609.04453' for n in _descendants(papers[0])))
 
-    def test_homepage_proof_strip_uses_verified_publication_facts(self):
-        strip = next(node for node in self.visible(self.pages['index.html'])
-                     if node['attrs'].get('aria-label') == 'Research profile')
-        text = ' '.join(_accessible_text(node) for node in _descendants(strip)
-                        if node['tag'] == 'p')
-        self.assertIn('PMLR 306', text)
+    def test_homepage_selected_updates_use_verified_dates_and_facts(self):
+        updates = next(node for node in self.visible(self.pages['index.html'])
+                       if node['attrs'].get('aria-labelledby') == 'updates-heading')
+        text = ' '.join(_accessible_text(node) for node in _descendants(updates))
+        self.assertIn('Selected updates', text)
+        self.assertIn('ICML 2026', text)
         self.assertIn('NeurIPS 2026 Workshop on On-Device Intelligence', text)
-        self.assertIn('Accepted', text)
-        self.assertNotIn('arXiv preprint', text)
-        self.assertIn('IEEE Big Data 2025', text)
-        self.assertNotIn('Paper-backed research connected to engineering practice', text)
+        self.assertIn('SPEAR-MM', text)
+        self.assertIn('Nov. 2022', text)
+        self.assertNotIn('PMLR 306', text)
+        self.assertNotIn('patent granted', text.casefold())
+        times = [_accessible_text(node).strip() for node in _descendants(updates)
+                 if node['tag'] == 'time']
+        self.assertEqual(times, ['2026', '2026', '2025', 'Nov. 2022'])
+        self.assertTrue(any(node['tag'] == 'a' and
+                            urlparse(urljoin('https://berkcankapusuzoglu.github.io/',
+                                             node['attrs'].get('href', ''))).path ==
+                            '/publications/2025-spear-mm.html'
+                            for node in _descendants(updates)))
+
+    def test_cgd_uses_icml_2026_as_the_public_facing_venue(self):
+        for route in ('index.html', 'publications.html',
+                      'publications/2026-critique-guided-distillation.html'):
+            with self.subTest(route=route):
+                document = self.all_pages[route]
+                text = ' '.join(_accessible_text(node) for node in self.visible(document))
+                self.assertIn('ICML 2026', text)
+                self.assertNotIn('PMLR 306', text)
+
+    def test_homepage_hero_typography_is_deliberately_compact(self):
+        css = (Path(__file__).parents[1] / 'assets' / 'css' / 'main.css').read_text(encoding='utf-8')
+        self.assertRegex(css, r'\.home-hero h1\s*\{[^}]*font-size:\s*clamp\([^;]*2\.5rem\)')
+        global_h1 = re.search(r'(?m)^h1\s*\{([^}]*)\}', css)
+        self.assertIsNotNone(global_h1)
+        self.assertNotRegex(global_h1.group(1), r'clamp\([^;]*,\s*5rem\)')
+
+    def test_about_introduction_is_written_in_first_person(self):
+        about = self.all_pages['about.html']
+        text = ' '.join(_accessible_text(node) for node in self.visible(about))
+        self.assertIn('I research language model reasoning', text)
+        self.assertNotIn('Berkcan Kapusuzoglu is an applied AI researcher', text)
 
     def test_about_page_states_doctoral_field(self):
         about = (self.public / 'about.html').read_text(encoding='utf-8')
@@ -1265,6 +1296,30 @@ class GeneratedShellTests(unittest.TestCase):
                                     node['attrs'].get('href') == original and
                                     'Read the original on Medium' in _accessible_name(node, {})
                                     for node in document.nodes))
+
+    def test_medium_archive_stories_include_one_local_attributed_figure(self):
+        expected = {
+            'writing/physics-informed-machine-learning-additive-manufacturing.html':
+                'physics-informed-machine-learning-additive-manufacturing/media/piml-strategies.webp',
+            'writing/uncertainty-quantification-sensitivity-analysis-part-i.html':
+                'uncertainty-quantification-sensitivity-analysis-part-i/media/uq-fatigue-framework.webp',
+            'writing/multi-objective-optimization-under-uncertainty.html':
+                'multi-objective-optimization-under-uncertainty/media/multi-objective-pareto.webp',
+        }
+        for route, image_path in expected.items():
+            with self.subTest(route=route):
+                document = self.all_pages[route]
+                figures = [node for node in self.visible(document)
+                           if 'article-figure' in node['attrs'].get('class', '')]
+                self.assertEqual(len(figures), 1)
+                images = [node for node in _descendants(figures[0]) if node['tag'] == 'img']
+                self.assertEqual(len(images), 1)
+                self.assertTrue(images[0]['attrs'].get('alt', '').strip())
+                self.assertTrue(images[0]['attrs'].get('src', '').endswith(image_path))
+                self.assertTrue((self.public / 'writing' / image_path).is_file())
+                captions = [node for node in _descendants(figures[0]) if node['tag'] == 'figcaption']
+                self.assertEqual(len(captions), 1)
+                self.assertIn('Original Medium article', _accessible_text(captions[0]))
 
     def test_medium_archive_local_links_resolve(self):
         routes = (
@@ -1440,11 +1495,11 @@ class GeneratedShellTests(unittest.TestCase):
                     self.assertNotIn(phrase, text)
                 self.assertNotRegex(text, r'\b\d{5}(?:-\d{4})?\b')
 
-    def test_about_uses_exact_official_title(self):
+    def test_about_uses_first_person_applied_researcher_positioning(self):
         document = _Document()
         document.feed((self.public / 'about.html').read_text(encoding='utf-8'))
         text = ' '.join(_accessible_text(node) for node in self.visible(document))
-        self.assertIn('Staff Applied Researcher - AI Foundations', text)
+        self.assertIn('I am an Applied Researcher', text)
 
     def test_blog_explains_publishable_and_reusable_content(self):
         document = _Document()

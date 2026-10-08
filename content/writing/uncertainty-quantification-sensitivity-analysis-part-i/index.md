@@ -14,6 +14,8 @@ Uncertainty quantification asks how much confidence we should place in a model p
 
 This matters in fatigue-damage prognosis. Measurements are noisy, material and loading conditions vary, model parameters are imperfectly known, and the damage state itself may be only partially observed. Reporting one predicted remaining-life value hides those sources of uncertainty.
 
+{{< archive-figure src="media/uq-fatigue-framework.webp" alt="A workflow connecting uncertainty quantification, sensitivity analysis, and test-design optimization for fatigue-crack-growth prediction." caption="Uncertainty quantification, sensitivity analysis, and test-design optimization for fatigue-crack-growth prediction." source_url="https://medium.com/@berkcan1992/uncertainty-quantification-uq-and-sensitivity-analysis-part-i-2e7078e9136c" >}}
+
 ## Aleatory and epistemic uncertainty
 
 Two categories help organize the problem:

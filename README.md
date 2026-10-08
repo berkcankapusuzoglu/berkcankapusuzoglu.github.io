@@ -28,7 +28,8 @@ hugo --cleanDestinationDir --minify --panicOnWarning --printPathWarnings
 
 ## Where content lives
 
-- `data/profile.yaml` holds the public name, role, research themes, professional links, and homepage proof points.
+- `data/profile.yaml` holds the public name, role, research themes, and professional links.
+- `data/updates.yaml` holds the reverse-chronological news items shown on the homepage.
 - `content/about/` holds the biography, education, and academic interests.
 - `content/publications/` holds one Markdown record per paper. The Publications page shows the complete record on one page.
 - `content/writing/` holds Blog posts. The landing page shows each title, opening excerpt, publication date, reading time, and a link to the complete post.

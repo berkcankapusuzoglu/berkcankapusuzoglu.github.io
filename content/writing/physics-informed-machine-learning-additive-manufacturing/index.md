@@ -14,6 +14,8 @@ Physics-based models encode mechanisms we already understand, but they can be ex
 
 The application in this work is fused filament fabrication. The prediction problem connects process settings with part-quality outcomes such as bond quality and porosity. A useful model must learn from experiments while respecting the structure supplied by manufacturing physics and simulation.
 
+{{< archive-figure src="media/piml-strategies.webp" alt="Three physics-informed machine-learning strategies: adding physics constraints to the loss, using simulation outputs as model inputs, and pretraining with simulation before updating with experimental data." caption="Three ways to incorporate physics into a neural network." source_url="https://medium.com/@berkcan1992/physics-informed-machine-learning-piml-application-to-additive-manufacturing-3ddd2324059a" >}}
+
 ## Three integration strategies
 
 The study compares three practical ways to add physics knowledge to a learning pipeline:

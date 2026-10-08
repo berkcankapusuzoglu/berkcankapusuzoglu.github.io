@@ -7,7 +7,7 @@ baseURL: 'https://berkcankapusuzoglu.github.io/' # Website URL
 relativeURLs: true
 uglyURLs: true
 params:
-  role: Staff Applied Researcher - AI Foundations
+  role: Applied Scientist
   positioning: I lead research and engineering for efficient, reliable language models.
   description: Applied AI research across language model reasoning, efficiency, and reliable machine learning systems.
   email: berkcankapusuzoglu@gmail.com

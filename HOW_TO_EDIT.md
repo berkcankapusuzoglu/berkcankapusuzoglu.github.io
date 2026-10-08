@@ -16,7 +16,8 @@ Open <http://localhost:1313/>. Press `Ctrl+C` in the terminal to stop the server
 
 | What you want to edit | File or folder |
 | --- | --- |
-| Homepage name, headline, bio, links, research themes, and proof points | `data/profile.yaml` |
+| Homepage name, headline, bio, links, and research themes | `data/profile.yaml` |
+| Homepage news and career updates | `data/updates.yaml` |
 | Homepage browser title and description | `content/_index.md` |
 | Homepage section headings, supporting sentences, and button text | `layouts/index.html` |
 | About page | `content/about/_index.md` |
@@ -58,6 +59,25 @@ To add an image, put it in the post folder, for example `content/writing/my-post
 ```markdown
 ![Plain-language description of the image](diagram.png)
 ```
+
+For a figure with a caption and source link, use:
+
+```markdown
+{{< archive-figure src="diagram.png" alt="Describe what the figure shows" caption="A concise caption." source_url="https://example.com/original" >}}
+```
+
+## Add a homepage update
+
+Open `data/updates.yaml`, copy the first four-line entry, and edit its values. Keep the newest item first:
+
+```yaml
+- date: "Sep. 2026"
+  date_iso: "2026-09"
+  text: "A short, factual update."
+  url: "/publications/example.html"
+```
+
+Use `YYYY-MM` for `date_iso`. The `url` can point to a page on this site or an external article.
 
 ## Add a publication
 

@@ -14,6 +14,8 @@ Engineering decisions often involve goals that cannot all be improved at once. A
 
 The result is usually a Pareto front. Each point represents a design for which improving one objective would worsen another. The front does not make the decision automatically. It exposes the available trade-offs so a decision-maker can choose among them.
 
+{{< archive-figure src="media/multi-objective-pareto.webp" alt="A two-dimensional Pareto-front plot showing alternative trade-offs among four optimization objectives." caption="A two-dimensional view of the Pareto front for four objectives." source_url="https://medium.com/@berkcan1992/multi-objective-optimization-under-uncertainty-858592e662ce" >}}
+
 ## Deterministic optima can be fragile
 
 A design that looks best at nominal inputs may perform poorly when operating conditions change. Prediction models also introduce uncertainty through limited data, uncertain parameters, measurement noise, and model error. Ignoring these sources can produce a precise-looking answer that is not reliable.

@@ -1,11 +1,11 @@
 ---
 title: "About"
-description: "Berkcan Kapusuzoglu is an applied AI researcher whose work spans language model reasoning, efficient systems, and scientific machine learning."
+description: "I research language model reasoning, efficient AI systems, and scientific machine learning."
 ---
 
-I am Berkcan Kapusuzoglu, a Staff Applied Researcher - AI Foundations. My work focuses on language model reasoning, distillation, efficient model systems, and dependable evaluation. I enjoy carrying a research question from its assumptions and experiments through the engineering decisions required to make the result useful.
+I am an Applied Researcher focusing on large language model (LLM) reasoning, distillation, efficient model systems, and dependable evaluation. I enjoy carrying a research question from its assumptions and experiments through the engineering decisions required to make the result useful.
 
-My research path began in scientific and physics-informed machine learning, uncertainty quantification, and engineering design. It now extends to foundation models, including critique-guided distillation, policy distillation, adaptive inference, mixture-of-experts compression, and methods for retaining model capabilities during adaptation.
+My research path began in scientific and physics-informed machine learning, uncertainty quantification, and engineering design. It now extends to foundation models, including critique-guided distillation, policy distillation, adaptive inference, mixture-of-experts (MoE) compression, and methods for retaining model capabilities during adaptation.
 
 ## Education
 
